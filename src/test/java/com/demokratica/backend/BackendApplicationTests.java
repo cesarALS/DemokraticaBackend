@@ -1,10 +1,10 @@
-package com.demokratica.DemokraticaBackend;
+package com.demokratica.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DemokraticaBackendApplicationTests {
+class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {
