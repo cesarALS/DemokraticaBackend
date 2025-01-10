@@ -18,11 +18,16 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
+			// .csrf(csrf -> csrf.disable()) //Para desactivar CSRF y que no sea necesario usar tokens CSRF
 			.authorizeHttpRequests((authorize) -> authorize
+				.requestMatchers("/", "/conozcanos", "/ayuda").permitAll()
 				.anyRequest().authenticated()
 			)
 			.httpBasic(Customizer.withDefaults())
-			.formLogin(Customizer.withDefaults());
+			 .formLogin(formLogin -> formLogin
+				.loginPage("/ingrese")
+				.permitAll());
+			//.formLogin(Customizer.withDefaults());
 
 		return http.build();
 	}
