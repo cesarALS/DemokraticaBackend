@@ -49,17 +49,17 @@ public class TestController {
     
     @GetMapping("/conozcanos")
     public void getConozcanosPage(HttpServletResponse response) throws IOException {
-        response.sendRedirect("demokratica.vercel.app/conozcanos");
+        response.sendRedirect("http://demokratica.vercel.app/conozcanos");
     }
 
     @GetMapping("/ayuda")
     public void getAyudaPage(HttpServletResponse response) throws IOException{
-        response.sendRedirect("demokratica.vercel.app/ayuda");
+        response.sendRedirect("http://demokratica.vercel.app/ayuda");
     }
     
     @GetMapping("/ingrese")
     public void getLoginPage(HttpServletResponse response) throws IOException {
-        response.sendRedirect("demokratica.vercel.app/ingrese");
+        response.sendRedirect("http://demokratica.vercel.app/ingrese");
     }
 
     /*
