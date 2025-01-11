@@ -4,6 +4,9 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -11,7 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-
+import org.springframework.security.core.userdetails.UserDetailsService;
 /*
 	Esta es la clase en la que se configura la seguridad de la aplicación: cuáles páginas requieren
 	autenticación y cuáles no, cuáles requieren ciertos roles para ser accedidas, qué métodos de
@@ -72,14 +75,37 @@ public class SecurityConfig {
 	}
 
 	/*
-		
+		Los objetos de tipo UserDetailsManager son fundamentales en Spring Security. Son los que se
+		encargan de almacenar los datos de los usuarios (incluyendo la contraseña y sus roles) y también
+		de gestionarlos (para cambiar la contraseña por ejemplo). En el fondo se usan en el proceso de
+		autenticación mediante usuario y contraseña.
+		Spring Security necesita que le definamos cuál de todas las implementaciones queremos y cómo
+		está configurada, porque hay muchas posibles implementaciones y configuraciones: para autenticación 
+		con servidor LDAP, autenticación en memoria (una mierda que solo usan en demos triviales que no 
+		enseñan nada) o autenticación con una base de datos, todas configurables.
+		Al marcar este método con @Bean y retornar un UserDetailsManager le indicamos a Spring que si 
+		necesita un UserDetailsManager lo obtenga llamando a este método
+
+		JdbcUserDetailsManager es la implementación usada para acceder a bases de datos de verdad (no esa
+		mierda de InMemoryUserDetailsManager, que es de juguete)
+		El DataSource se obtiene por inyección de dependencias. Spring lee el application.properties, que
+		es donde tenemos toda la información necesaria para las conexiones a la base de datos, y con eso
+		él mismo crea el DataSource y nos lo pasa para que podamos construir el JdbcUserDetailsManager
 	 */
 	@Bean
-	public UserDetailsManager users(DataSource dataSource) {
+	public UserDetailsService users(DataSource dataSource) {
 		JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
 		return users;
 	}
 
+	@Bean
+	public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder encoder) {
+		DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+		authenticationProvider.setPasswordEncoder(encoder);
+		authenticationProvider.setUserDetailsService(userDetailsService);
+
+		return new ProviderManager(authenticationProvider);
+	}
 	/*
 		Para hashear las contraseñas se puede usar una enorme diversidad de métodos y Spring no sabe
 		cuál queremos.
