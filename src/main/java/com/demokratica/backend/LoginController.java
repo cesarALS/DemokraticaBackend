@@ -20,9 +20,9 @@ public class LoginController {
     }
     
     @PostMapping("/ingrese")
-    public ResponseEntity<?> loginWithPassword(@RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<?> loginWithPassword(@RequestParam String email, @RequestParam String password) {
         Authentication authenticationRequest = 
-            UsernamePasswordAuthenticationToken.unauthenticated(username, password);
+            UsernamePasswordAuthenticationToken.unauthenticated(email, password);
           
 
         Authentication authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);

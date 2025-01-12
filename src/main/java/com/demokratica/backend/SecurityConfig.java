@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -20,6 +21,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 	autenticación se van a usar (OAuth 2.0, login mediante formulario, login mediante headers o
 	parámetros en la petición HTTP (llamado Http basic authentication)), si se va a usar protección
 	contra un exploit llamado CSRF, entre otros
+
+	Otro tipo de "configuración" que realizamos es definir unos métodos que retornan objetos de diversos
+	tipos relacionados con seguridad.
+	Mediante la anotación @Bean le decimos a Spring que si la aplicación en algún momento llega a necesitar
+	un objeto del tipo que retorna ese método, que llame al método para obtenerlo.
  */
 @Configuration
 @EnableWebSecurity
@@ -76,8 +82,8 @@ public class SecurityConfig {
 	/*
 		Los objetos de tipo UserDetailsManager son fundamentales en Spring Security. Son los que se
 		encargan de almacenar los datos de los usuarios (incluyendo la contraseña y sus roles) y también
-		de gestionarlos (para cambiar la contraseña por ejemplo). En el fondo se usan en el proceso de
-		autenticación mediante usuario y contraseña.
+		de gestionarlos (para cambiar la contraseña por ejemplo). En el fondo Spring Security los 
+		usa en el proceso de autenticación mediante usuario y contraseña.
 		Spring Security necesita que le definamos cuál de todas las implementaciones queremos y cómo
 		está configurada, porque hay muchas posibles implementaciones y configuraciones: para autenticación 
 		con servidor LDAP, autenticación en memoria (una mierda que solo usan en demos triviales que no 
@@ -92,11 +98,25 @@ public class SecurityConfig {
 		él mismo crea el DataSource y nos lo pasa para que podamos construir el JdbcUserDetailsManager
 	 */
 	@Bean
-	public UserDetailsService users(DataSource dataSource) {
-		JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
-		return users;
+	public UserDetailsService getJdbc(DataSource dataSource) {
+		JdbcUserDetailsManager jdbc = new JdbcUserDetailsManager(dataSource);
+		jdbc.setUsersByUsernameQuery("SELECT email,password,enabled FROM users WHERE email = ?");
+		jdbc.setAuthoritiesByUsernameQuery("SELECT email,authority FROM authorities WHERE email = ?");
+		return jdbc;
 	}
 
+	/*
+	 * Al marcar este método con la anotación @Bean y retornar un objeto de tipo AuthenticationManager le
+	 * estamos diciendo a Spring que si necesita un AuthenticationManager lo consiga llamando a este método,
+	 * en el que configuramos el nuestro
+	 * 
+	 * Le estamos pidiendo que nos inyecte un UserDetailsService para poder inicializar el AuthenticationManager
+	 * El que nos va a inyectar es el JdbcUserDetailsManager, que es una "subclase" de UserDetailsService así
+	 * que tiene un tipo compatible
+	 * (Observación: también le estamos pidiendo que nos inyecte un PasswordEncoder. Si el método no lo
+	 * llamamos nosotros e incluye objetos que no son atributos de esta clase, significa que los estamos
+	 * obteniendo mediante inyección de dependecias)
+	 */
 	@Bean
 	public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder encoder) {
 		DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
