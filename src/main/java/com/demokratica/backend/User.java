@@ -3,6 +3,7 @@ package com.demokratica.backend;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Data;
 
 /*
     En Spring añadimos la anotación @Entity a todas las clases que queramos guardar en la BD.
@@ -13,6 +14,9 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "users")
+//Este es un método de Lombok (un proyecto de Spring) que hace que no tengamos que definir getters y setters
+//a mano
+@Data 
 public class User {
     
     /*
@@ -24,34 +28,11 @@ public class User {
         Para más información buscar "Hibernate Annotations"
     */
 
-    //NOTA: los atributos DEBEN SER PRIVADOS y se deben establecer Getters y Setters para cada uno. Esto
-    //se puede hacer de forma automática con el IDE
+    //NOTA: los atributos DEBEN SER PRIVADOS y se deben establecer Getters y Setters. En nuestro caso esto
+    //      lo hace Lombok gracias a la anotación @Data
     @Id
+    private String email;
     private String username;
     private String password;
     private Boolean enabled;
-
-    public String getUsername() {
-        return this.username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return this.password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
 }
