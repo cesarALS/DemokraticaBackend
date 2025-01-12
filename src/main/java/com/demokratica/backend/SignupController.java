@@ -24,7 +24,12 @@ public class SignupController {
     public ResponseEntity<?> signUp(@RequestParam String email, @RequestParam String username, @RequestParam String password) {
         //Esta lógica debería ir en una clase aparte de tipo @Service
 
-        //TODO: añadir la lógica que verifica que no exista alguien con el mismo username
+        if (userRepository.existsById(email)) {
+            ErrorResponse e = new ErrorResponse("Correo ya utilizado", 
+                        "El correo que ingresó ya está asociado a una cuenta");
+            return new ResponseEntity<>(e, HttpStatus.CONFLICT);
+        }
+
         User user = new User();
         user.setEmail(email);
         user.setUsername(username);
@@ -36,9 +41,11 @@ public class SignupController {
         authority.setAuthority("USER");
         authority.setUser(user);
         authoritiesRepository.save(authority);
-        System.out.println("Succesfully saved data to the authorities table");
 
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return new ResponseEntity<>("Cuenta creada exitosamente", HttpStatus.CREATED);
     }
     
+
+    public record ErrorResponse (String error, String response) {
+    }
 }
