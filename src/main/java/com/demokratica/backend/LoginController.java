@@ -8,11 +8,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
+@CrossOrigin(origins = {"http://localhost:3000", "https://demokratica.vercel.app"}, allowCredentials = "true")
 public class LoginController {
 
     @Autowired
@@ -40,6 +42,7 @@ public class LoginController {
 
         LoginResponse response = new LoginResponse(username, email);
         return new ResponseEntity<>(response, HttpStatus.OK);
+
     }
     
     /*
