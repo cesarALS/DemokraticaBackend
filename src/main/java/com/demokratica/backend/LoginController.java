@@ -37,7 +37,9 @@ public class LoginController {
         User user = userRepository.findById(email).orElseThrow(() -> 
                     new RuntimeException("No pudimos encontrar su nombre de usuario"));
         String username = user.getUsername();
-        return new ResponseEntity<>("Bienvenido " + username, HttpStatus.OK);
+
+        LoginResponse response = new LoginResponse(username, email);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
     
     /*
@@ -52,5 +54,8 @@ public class LoginController {
         Para verlo más un poco más en detalle mirar https://www.baeldung.com/java-record-keyword
     */
     public record LoginRequest(String username, String password) {
+    }
+
+    public record LoginResponse(String username, String email) {
     }
 }

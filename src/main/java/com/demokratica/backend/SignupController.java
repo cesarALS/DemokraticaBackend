@@ -42,10 +42,14 @@ public class SignupController {
         authority.setUser(user);
         authoritiesRepository.save(authority);
 
-        return new ResponseEntity<>("Cuenta creada exitosamente", HttpStatus.CREATED);
+        SignupResponse response = new SignupResponse(username, email);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     
 
     public record ErrorResponse (String error, String response) {
+    }
+
+    public record SignupResponse (String username, String email) {
     }
 }
