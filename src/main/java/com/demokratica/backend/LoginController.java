@@ -39,7 +39,7 @@ public class LoginController {
         User user = userRepository.findById(email).orElseThrow(() -> 
                     new RuntimeException("No pudimos encontrar su nombre de usuario"));
         String username = user.getUsername();
-        return new ResponseEntity<>("Bienvenido " + username, HttpStatus.OK);
+        return new ResponseEntity<>(username, HttpStatus.OK);
     }
     
     /*
