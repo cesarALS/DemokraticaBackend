@@ -10,11 +10,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMethod;
+
 
 
 @RestController
-@CrossOrigin(origins = {"http://localhost:3000", "https://demokratica.vercel.app"}, allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:3000", "https://demokratica.vercel.app"}, allowCredentials = "true", allowedHeaders = {"Content-Type",
+"Authorization", "X-Requested-With"}, methods = {RequestMethod.POST, RequestMethod.OPTIONS})
 public class LoginController {
 
     @Autowired
@@ -26,22 +29,23 @@ public class LoginController {
     }
     
     @PostMapping("/ingrese")
-    public ResponseEntity<?> loginWithPassword(@RequestParam String email, @RequestParam String password) {
+    public ResponseEntity<?> loginWithPassword(@RequestBody Credentials credentials) {
         Authentication authenticationRequest = 
-            UsernamePasswordAuthenticationToken.unauthenticated(email, password);
+            UsernamePasswordAuthenticationToken.unauthenticated(credentials.email(), credentials.password());
           
         try { 
             Authentication authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);
         } catch (BadCredentialsException e) {
-            return new ResponseEntity<>("Credenciales no válidas", HttpStatus.FORBIDDEN);
+            ErrorResponse errorResponse = new ErrorResponse("Credenciales no válidas", "Correo o contraseña incorrectos");
+            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
         }
         
-        User user = userRepository.findById(email).orElseThrow(() -> 
+        User user = userRepository.findById(credentials.email()).orElseThrow(() -> 
                     new RuntimeException("No pudimos encontrar su nombre de usuario"));
         String username = user.getUsername();
 
-        LoginResponse response = new LoginResponse(username, email);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        LoginResponse loginResponse = new LoginResponse(username, credentials.email());
+        return new ResponseEntity<>(loginResponse, HttpStatus.OK);
 
     }
     
@@ -60,5 +64,11 @@ public class LoginController {
     }
 
     public record LoginResponse(String username, String email) {
+    }
+
+    public record Credentials(String email, String password) {
+    }
+
+    public record ErrorResponse(String error, String description) {
     }
 }
