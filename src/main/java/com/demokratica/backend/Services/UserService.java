@@ -1,13 +1,19 @@
-package com.demokratica.backend;
+package com.demokratica.backend.Services;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.demokratica.backend.Exceptions.UserAlreadyExistsException;
+import com.demokratica.backend.Exceptions.UserNotFoundException;
+import com.demokratica.backend.Model.Authority;
+import com.demokratica.backend.Model.User;
+
+import com.demokratica.backend.Repositories.AuthoritiesRepository;
+import com.demokratica.backend.Repositories.UsersRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -28,6 +34,10 @@ public class UserService {
 
     @Transactional
     public void saveUser(String email, String username, String password) {
+        if (userRepository.existsById(email)) {
+            throw new UserAlreadyExistsException(email);
+        }
+
         User user = new User();
         user.setEmail(email);
         user.setUsername(username);
@@ -41,19 +51,15 @@ public class UserService {
         authoritiesRepository.save(authority);
     }
 
-    public boolean existsById(String email) {
-        return userRepository.existsById(email);
-    }
-
     @Transactional
     public void updatePassword(String email, String currentPassword, String newPassword) {
         User user = userRepository.findById(email).orElseThrow(() ->
-            new RuntimeException("No se pudo encontrar un usuario con el correo " + email));
+            new UserNotFoundException(email));
         
         if (!this.authenticateUser(email, currentPassword)) {
             throw new BadCredentialsException("Credenciales no válidas");
         }
-        
+
         user.setPassword(encoder.encode(newPassword));
         userRepository.save(user);
     }
@@ -63,13 +69,20 @@ public class UserService {
             UsernamePasswordAuthenticationToken.unauthenticated(email, password);
           
         try { 
-            Authentication authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);
+            this.authenticationManager.authenticate(authenticationRequest);
         } catch (BadCredentialsException e) {
             return false;
         }
         
 
         return true;
+    }
+
+    public String getUsername(String email) {
+        User user = userRepository.findById(email).orElseThrow(() ->
+                new RuntimeException("Couldn't find a user with email " + email));
+
+        return user.getUsername();
     }
     
 

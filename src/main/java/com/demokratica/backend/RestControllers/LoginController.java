@@ -1,49 +1,40 @@
-package com.demokratica.backend;
+package com.demokratica.backend.RestControllers;
+
+import com.demokratica.backend.Services.UserService;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
-//TODO: Usar el UserService en lugar del UserRepository y AuthenticationManager
+//TODO: poner los public records usados por varias clases en un lugar aparte, para centralizar y eliminar la redundancia
 @RestController
 @CrossOrigin(origins = {"http://localhost:3000", "https://demokratica.vercel.app"}, allowCredentials = "true")
 public class LoginController {
 
-    @Autowired
-    private UsersRepository userRepository;
-    private final AuthenticationManager authenticationManager;
-
-    public LoginController(AuthenticationManager authenticationManager) {
-        this.authenticationManager = authenticationManager;
+    private final UserService userService;
+    public LoginController (UserService userService) {
+        this.userService = userService;
     }
     
+    //TODO: cambiar el nombre endpoint por uno que sea más RESTful 
+    //TODO: recibir los parámetros como un JSON en el body
     @PostMapping("/ingrese")
     public ResponseEntity<?> loginWithPassword(@RequestParam String email, @RequestParam String password) {
-        Authentication authenticationRequest = 
-            UsernamePasswordAuthenticationToken.unauthenticated(email, password);
-          
         try { 
-            Authentication authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);
+            userService.authenticateUser(email, password);
         } catch (BadCredentialsException e) {
-            return new ResponseEntity<>("Credenciales no válidas", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(new ErrorResponse("Credenciales no válidas"), HttpStatus.FORBIDDEN);
         }
         
-        User user = userRepository.findById(email).orElseThrow(() -> 
-                    new RuntimeException("No pudimos encontrar su nombre de usuario"));
-        String username = user.getUsername();
+        String username = userService.getUsername(email);
 
         LoginResponse response = new LoginResponse(username, email);
         return new ResponseEntity<>(response, HttpStatus.OK);
-
     }
     
     /*
@@ -61,5 +52,8 @@ public class LoginController {
     }
 
     public record LoginResponse(String username, String email) {
+    }
+
+    public record ErrorResponse(String error) {
     }
 }

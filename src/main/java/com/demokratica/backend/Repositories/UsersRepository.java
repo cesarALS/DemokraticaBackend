@@ -1,6 +1,8 @@
-package com.demokratica.backend;
+package com.demokratica.backend.Repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.demokratica.backend.Model.User;
 
 /*
     Los objetos de tipo JpaRepository implementan un montón de métodos para consultar a las bases

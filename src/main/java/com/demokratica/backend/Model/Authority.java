@@ -1,4 +1,4 @@
-package com.demokratica.backend;
+package com.demokratica.backend.Model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
