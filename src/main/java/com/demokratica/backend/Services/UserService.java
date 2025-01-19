@@ -1,7 +1,6 @@
 package com.demokratica.backend.Services;
 
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,35 +51,46 @@ public class UserService {
     }
 
     @Transactional
+    public void deleteUser(String email) {
+        User user = userRepository.findById(email).orElseThrow(() ->
+                new UserNotFoundException(email));
+        
+        Long id = authoritiesRepository.findByUser(user).getId();
+
+        authoritiesRepository.deleteById(id);
+        userRepository.deleteById(email);
+    }
+
+    @Transactional
     public void updatePassword(String email, String currentPassword, String newPassword) {
         User user = userRepository.findById(email).orElseThrow(() ->
             new UserNotFoundException(email));
         
-        if (!this.authenticateUser(email, currentPassword)) {
-            throw new BadCredentialsException("Credenciales no válidas");
-        }
-
+        authenticateUser(email, currentPassword);
+    
         user.setPassword(encoder.encode(newPassword));
         userRepository.save(user);
     }
 
-    public boolean authenticateUser(String email, String password) {
-        Authentication authenticationRequest = 
-            UsernamePasswordAuthenticationToken.unauthenticated(email, password);
-          
-        try { 
-            this.authenticationManager.authenticate(authenticationRequest);
-        } catch (BadCredentialsException e) {
-            return false;
-        }
-        
+    @Transactional
+    public void updateUsername(String email, String newUsername, String password) {
+        User user = userRepository.findById(email).orElseThrow(() ->
+            new UserNotFoundException(email));
 
-        return true;
+        authenticateUser(email, password);
+
+        user.setUsername(newUsername);
+        userRepository.save(user);
+    }
+
+    public void authenticateUser(String email, String password) {
+        Authentication authenticationRequest = UsernamePasswordAuthenticationToken.unauthenticated(email, password);
+        this.authenticationManager.authenticate(authenticationRequest);
     }
 
     public String getUsername(String email) {
         User user = userRepository.findById(email).orElseThrow(() ->
-                new RuntimeException("Couldn't find a user with email " + email));
+                new UserNotFoundException(email));
 
         return user.getUsername();
     }
