@@ -1,6 +1,7 @@
 package com.demokratica.backend.Repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import com.demokratica.backend.Model.User;
 
@@ -15,6 +16,7 @@ import com.demokratica.backend.Model.User;
     Solo es necesario que en la parte de JpaRepository< , > el primer valor sea la clase que corresponde a la
     tabla y el segundo sea el tipo de su ID 
  */
+@Repository
 public interface UsersRepository extends JpaRepository<User, String>{
     
 }
