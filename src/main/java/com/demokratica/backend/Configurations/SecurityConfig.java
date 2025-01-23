@@ -13,6 +13,8 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 /*
 	Esta es la clase en la que se configura la seguridad de la aplicación: cuáles páginas requieren
@@ -62,7 +64,7 @@ public class SecurityConfig {
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
 				//.requestMatchers("/", "/conozcanos", "/ayuda").permitAll()
-				.anyRequest().permitAll()
+				.anyRequest().authenticated()
 			);
 			/*
 				Tengo un montón de métodos comentados para que me sea más fácil ir probando

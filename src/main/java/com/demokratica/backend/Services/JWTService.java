@@ -15,7 +15,7 @@ import java.util.Date;
 
 //TODO: entender cómo funciona todo esto y dejar de usar métodos deprecados
 @Service
-public class GPT_JWTService {
+public class JWTService {
 
     //TODO: crear una llave secreta buena y asegurarla mediante environment variables o algún otro método
     private static final String SECRET_KEY = "vM7VZknE5lS1kT7F7sErmZQ6aH27A7XfYvVNoF1B3l412"; // You should load this securely from a properties file or env

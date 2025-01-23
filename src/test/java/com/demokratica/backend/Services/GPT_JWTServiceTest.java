@@ -1,11 +1,9 @@
-package com.demokratica.backend;
+package com.demokratica.backend.Services;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
-
-import com.demokratica.backend.Services.GPT_JWTService;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class GPT_JWTServiceTest {
 
     @InjectMocks
-    private GPT_JWTService jwtService;
+    private JWTService jwtService;
 
     private String username;
     private String token;
