@@ -3,6 +3,7 @@ package com.demokratica.backend.Services;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -85,7 +86,8 @@ public class UserService {
 
     public void authenticateUser(String email, String password) {
         Authentication authenticationRequest = UsernamePasswordAuthenticationToken.unauthenticated(email, password);
-        this.authenticationManager.authenticate(authenticationRequest);
+        Authentication authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);
+        SecurityContextHolder.getContext().setAuthentication(authenticationResponse);
     }
 
     public String getUsername(String email) {
@@ -94,6 +96,8 @@ public class UserService {
 
         return user.getUsername();
     }
-    
 
+    public boolean existsById(String email) {
+        return userRepository.existsById(email);
+    }
 }

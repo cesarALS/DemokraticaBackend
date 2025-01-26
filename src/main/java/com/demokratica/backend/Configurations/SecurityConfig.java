@@ -28,6 +28,7 @@ public class SecurityConfig {
 		 */
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
+				.requestMatchers("/ingrese", "/unase").permitAll()
 				.anyRequest().authenticated()
 			);
 
