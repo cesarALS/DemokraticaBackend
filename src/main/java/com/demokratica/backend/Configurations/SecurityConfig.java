@@ -28,7 +28,7 @@ public class SecurityConfig {
 		 */
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
-				.requestMatchers("/ingrese", "/unase").permitAll()
+				.requestMatchers("/ingrese", "/unase", "/token-info", "/validar_token").permitAll()
 				.anyRequest().authenticated()
 			);
 
