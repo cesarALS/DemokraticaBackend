@@ -13,10 +13,7 @@ import org.springframework.test.annotation.Rollback;
 import com.demokratica.backend.Model.Authority;
 import com.demokratica.backend.Model.User;
 
-//Indica que vamos a ejecutar los métodos en el orden que nos indique la anotación @Order
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-//Inicializa solo los componentes relacionados con la capa de repositorios, para no demorarse tanto en inicializarse y no tener
-//problemas con todas las demás capas (es un unit test, después de todo)
 @DataJpaTest
 public class UserRepositoryTest {
     
@@ -26,10 +23,10 @@ public class UserRepositoryTest {
     private AuthoritiesRepository authoritiesRepository;
 
     @Test
-    @DisplayName("Prueba 1: guardar un usuario") //Descripción personalizada para el test
-    @Order(1) //Va a ser el primer test en ejecutarse. Importante cuando los tests dependen de los anteriores
-    @Rollback(value = false) //Quiere decir que una vez que se finalicen los tests no se van a deshacer los cambios en la BD
-    //Guarda el usuario hernandomk junto con sus autoridades en la BD y se asegura de que el ID en la tabla authorities sea mayor a
+    @DisplayName("Prueba 1: guardar un usuario")
+    @Order(1) 
+    @Rollback(value = false) 
+    //TODO: cambiar el hernandomk por otros valores si en algún momento hay que presentar esto
     public void saveUserTest() {
         User user = new User();
         String id = "hernandomk@gmail.com";

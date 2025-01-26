@@ -32,8 +32,6 @@ public class AccountController {
          * de seguridad (para que si deja la cuenta abierta otro no pueda llegar a cambiarle la contraseña)
          * Primero hay que validar que la contraseña sea la correcta, que es algo que updatePassword hace en el fondo
          * Luego sí se hace la actualización
-         * Las excepciones que pueden ocurrir son que no exista un usuario con ese correo o que las credenciales ingresadas
-         * no sean válidas (y por lo tanto no está autorizado para cambiar la contraseña)
          */
         try {
             userService.updatePassword(passwordChange.email(), passwordChange.currentPassword(), passwordChange.newPassword());
