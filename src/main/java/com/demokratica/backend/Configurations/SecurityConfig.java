@@ -2,6 +2,7 @@ package com.demokratica.backend.Configurations;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +14,10 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.demokratica.backend.Services.JWTService;
+
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 @Configuration
@@ -20,7 +25,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 public class SecurityConfig {
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
 		http
 		/*
 			TODO: activar la protección contra CSRF y enviar tokens CSRF con cada petición
@@ -30,7 +35,8 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/ingrese", "/unase", "/token-info", "/validar_token").permitAll()
 				.anyRequest().authenticated()
-			);
+			)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
@@ -55,5 +61,10 @@ public class SecurityConfig {
 	@Bean
 	public PasswordEncoder getPasswordEncoder() {
 		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+	}
+
+	@Bean
+	public JwtAuthenticationFilter getJwtFilter(JWTService jwtService) {
+		return new JwtAuthenticationFilter(jwtService);
 	}
 }

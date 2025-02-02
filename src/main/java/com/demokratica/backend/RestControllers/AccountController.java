@@ -64,7 +64,7 @@ public class AccountController {
     }
 
     @PutMapping("/users/{email}")
-    public ResponseEntity<?> updateUsernamne(@PathVariable String email, @RequestBody UsernameChange usernameChange) {
+    public ResponseEntity<?> updateUsername(@PathVariable String email, @RequestBody UsernameChange usernameChange) {
         try {
             userService.updateUsername(email, usernameChange.newUsername(), usernameChange.password());
         }
