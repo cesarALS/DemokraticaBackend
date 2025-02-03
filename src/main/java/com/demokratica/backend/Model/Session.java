@@ -25,8 +25,8 @@ public class Session {
     private String title;
     @Column(length = 500, nullable = false)
     private String description;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
     @OneToMany(mappedBy = "session")
     private List<Tag> tags;
