@@ -1,4 +1,4 @@
-package com.demokratica.backend.Configurations;
+package com.demokratica.backend.Security;
 
 import java.io.IOException;
 
@@ -36,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        
         String jwtToken = authHeader.substring(7);
         try {
             jwtService.validateToken(jwtToken);
@@ -45,10 +46,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         //Macheteado solo para probar que funcione. Debería crear una clase JWTAuthentication que extienda Authentication
         //porque este tipo de autenticación no es un UsernamePassword
-        Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(jwtService.extractEmail(jwtToken), null, AuthorityUtils.createAuthorityList("USER"));
-        SecurityContext ctx = SecurityContextHolder.getContext();
-        ctx.setAuthentication(authentication);
-        
+        //Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(jwtService.extractEmail(jwtToken), null, AuthorityUtils.createAuthorityList("USER"));
+        //SecurityContext ctx = SecurityContextHolder.getContext();
+        //ctx.setAuthentication(authentication);
+        SecurityContext newContext = SecurityContextHolder.createEmptyContext();
+        newContext.setAuthentication(JwtAuthentication.authenticated());
+        SecurityContextHolder.setContext(newContext);
         //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         //authentication.setAuthenticated(true);
 
