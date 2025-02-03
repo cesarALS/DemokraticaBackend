@@ -2,9 +2,7 @@ package com.demokratica.backend.Security;
 
 import java.io.IOException;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -12,7 +10,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.demokratica.backend.Services.JWTService;
 
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,8 +19,10 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public JWTService jwtService;
-    public JwtAuthenticationFilter(JWTService jwtService) {
+    public JwtAuthenticationProvider authProvider;
+    public JwtAuthenticationFilter(JWTService jwtService, JwtAuthenticationProvider authProvider) {
         this.jwtService = jwtService;
+        this.authProvider = authProvider;
     }
 
     @Override
@@ -36,24 +35,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        
         String jwtToken = authHeader.substring(7);
-        try {
-            jwtService.validateToken(jwtToken);
-        } catch (JwtException e) {
-            throw e;
+        Authentication authRequest = JwtAuthentication.unauthenticated(jwtToken);
+        Authentication authResponse = authProvider.authenticate(authRequest);
+
+        if (authResponse != null) {
+            SecurityContext newContext = SecurityContextHolder.createEmptyContext();
+            newContext.setAuthentication(authResponse);
+            SecurityContextHolder.setContext(newContext);
         }
-        
-        //Macheteado solo para probar que funcione. Debería crear una clase JWTAuthentication que extienda Authentication
-        //porque este tipo de autenticación no es un UsernamePassword
-        //Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(jwtService.extractEmail(jwtToken), null, AuthorityUtils.createAuthorityList("USER"));
-        //SecurityContext ctx = SecurityContextHolder.getContext();
-        //ctx.setAuthentication(authentication);
-        SecurityContext newContext = SecurityContextHolder.createEmptyContext();
-        newContext.setAuthentication(JwtAuthentication.authenticated());
-        SecurityContextHolder.setContext(newContext);
-        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        //authentication.setAuthenticated(true);
 
         filterChain.doFilter(request, response);
     }
