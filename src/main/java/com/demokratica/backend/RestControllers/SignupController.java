@@ -2,9 +2,18 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.Exceptions.UserAlreadyExistsException;
+import com.demokratica.backend.Services.JWTService;
 import com.demokratica.backend.Services.UserService;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -17,8 +26,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class SignupController {
     
     private UserService userService;
-    public SignupController (UserService userService) {
+    private UserDetailsService userDetailsService;
+    private JWTService jwtService;
+    public SignupController (UserService userService, JWTService jwtService, UserDetailsService userDetailsService) {
         this.userService = userService;
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
     //TODO: cambiar el nombre del endpoint por uno más RESTful
@@ -29,8 +42,18 @@ public class SignupController {
         } catch (UserAlreadyExistsException e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.CONFLICT);
         }
+        //TODO: es posible que esta parte sea redundante y que Spring Security ya lo esté haciendo él mismo
+        //Le decimos a Spring Security que un usuario recién registrado ya está autenticado y que usó el método de usuario y contraseña
+        //Alternativamente podríamos hacer la autenticación después de crear el JWT y decirle que se autenticó usando un JWT, pero estaríamos mintiendo
+        UserDetails userDetails = userDetailsService.loadUserByUsername(signupData.email());
+        Authentication auth = UsernamePasswordAuthenticationToken.authenticated(userDetails, null, AuthorityUtils.createAuthorityList("USER"));
+        SecurityContext newContext = SecurityContextHolder.createEmptyContext();
+        newContext.setAuthentication(auth);
+        SecurityContextHolder.setContext(newContext);
 
-        SignupResponse response = new SignupResponse(signupData.username(), signupData.email());
+        String jwtToken = jwtService.buildToken(auth, userService);
+
+        SignupResponse response = new SignupResponse(signupData.username(), signupData.email(), jwtToken);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     
@@ -38,7 +61,7 @@ public class SignupController {
     public record ErrorResponse (String error) {
     }
 
-    public record SignupResponse (String username, String email) {
+    public record SignupResponse (String username, String email, String jwtToken) {
     }
 
     public record SignupData (String email, String username, String password) {
