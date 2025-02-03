@@ -1,6 +1,7 @@
 package com.demokratica.backend.Services;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
@@ -47,7 +48,7 @@ public class JWTService {
                 .compact();
     }
 
-    public Claims extractAllClaims(String token) {
+    public static Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY)
                 .build()
@@ -55,12 +56,12 @@ public class JWTService {
                 .getPayload();
     }
 
-    public String extractEmail(String token) {
+    public static String extractEmail(String token) {
         Claims claims = extractAllClaims(token);
         return claims.getSubject();
     }
 
-    public String extractUsername(String token) {
+    public static String extractUsername(String token) {
         Claims claims = extractAllClaims(token);
         if (!claims.containsKey("username")) {
             throw new RuntimeException("The JWT token " + token + " doesn't contain a username");
@@ -70,12 +71,14 @@ public class JWTService {
     }
 
     //TODO: hacer una validación de verdad, teniendo en cuenta tiempos de expiración y la firma digital
-    public boolean validateToken(String token) {
-        Claims claims = extractAllClaims(token);
-        Date expirationDate = claims.getExpiration();
-        boolean isExpired = expirationDate.before(new Date());
-
-        String email = extractEmail(token);
-        return !isExpired && userService.existsById(email);
+    public static boolean validateToken(String token) {
+        //Asumo que si se pudo ejecutar el método extractAllClaims es porque no se lanzó ninguna excepción de que el token no fuera válido
+        try {
+            extractAllClaims(token);
+        } catch (JwtException j) {
+            return false;
+        }
+        
+        return true;
     }
 }

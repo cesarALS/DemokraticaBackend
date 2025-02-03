@@ -1,8 +1,7 @@
-package com.demokratica.backend.Configurations;
+package com.demokratica.backend.Security;
 
 import javax.sql.DataSource;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,7 +32,7 @@ public class SecurityConfig {
 		 */
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
-				.requestMatchers("/ingrese", "/unase", "/token-info", "/validar_token").permitAll()
+				.requestMatchers("/ingrese", "/unase").permitAll()
 				.anyRequest().authenticated()
 			)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -64,7 +63,12 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	public JwtAuthenticationFilter getJwtFilter(JWTService jwtService) {
-		return new JwtAuthenticationFilter(jwtService);
+	public JwtAuthenticationFilter getJwtFilter(JWTService jwtService, JwtAuthenticationProvider jwtAuthProvider) {
+		return new JwtAuthenticationFilter(jwtService, jwtAuthProvider);
+	}
+
+	@Bean
+	public JwtAuthenticationProvider getJwtAuthProvider() {
+		return new JwtAuthenticationProvider();
 	}
 }
