@@ -17,11 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping;
  */
 @RestController
 public class JWTController {
-    
-    JWTService jwtService;
-    public JWTController(JWTService jwtService) {
-        this.jwtService = jwtService;
-    }
 
     @GetMapping("/token-info")
     public ResponseEntity<TokenInfo> getTokenInfo(HttpServletRequest request) {
@@ -32,11 +27,11 @@ public class JWTController {
         }
         String jwtToken = authHeader.substring(7);
         
-        String email = jwtService.extractEmail(jwtToken);
-        String username = jwtService.extractUsername(jwtToken);
+        String email = JWTService.extractEmail(jwtToken);
+        String username = JWTService.extractUsername(jwtToken);
         //TODO: extraer las authorities de manera correcta
         String authority = "USER";
-        Boolean isValid = jwtService.validateToken(jwtToken);
+        Boolean isValid = JWTService.validateToken(jwtToken);
         TokenInfo tokenInfo;
         if (isValid) {
             tokenInfo = new TokenInfo(isValid, email, username, authority);
