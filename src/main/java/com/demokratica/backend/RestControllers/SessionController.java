@@ -3,8 +3,6 @@ package com.demokratica.backend.RestControllers;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.Model.Invitation;
-import com.demokratica.backend.Model.Tag;
-import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Services.SessionService;
 
 import java.time.LocalDateTime;

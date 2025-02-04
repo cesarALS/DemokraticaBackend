@@ -1,8 +1,11 @@
 package com.demokratica.backend.Services;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.Invitation;
@@ -11,12 +14,8 @@ import com.demokratica.backend.Model.Tag;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Repositories.SessionsRepository;
-import com.demokratica.backend.Repositories.InvitationsRepository;
-import com.demokratica.backend.Repositories.TagsRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
-import com.demokratica.backend.RestControllers.SessionController.InvitationDTO;
 import com.demokratica.backend.RestControllers.SessionController.NewSessionDTO;
-import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 
 import io.jsonwebtoken.lang.Collections;
 import jakarta.transaction.Transactional;
@@ -25,14 +24,9 @@ import jakarta.transaction.Transactional;
 public class SessionService {
     
     private SessionsRepository sessionsRepository;
-    private InvitationsRepository invitationsRepository;
-    private TagsRepository tagsRepository;
     private UsersRepository usersRepository;
-    public SessionService (SessionsRepository sessionsRepository, InvitationsRepository invitationsRepository, 
-                            TagsRepository tagsRepository, UsersRepository usersRepository) {
+    public SessionService (SessionsRepository sessionsRepository, UsersRepository usersRepository) {
         this.sessionsRepository = sessionsRepository;
-        this.invitationsRepository = invitationsRepository;
-        this.tagsRepository = tagsRepository;
         this.usersRepository = usersRepository;
     }
 
@@ -47,20 +41,23 @@ public class SessionService {
 
         newSession.setActivities(Collections.emptyList());
 
-        //TODO: hacer que "invite" al usuario que la creó y de una vez lo ponga como que ya la aceptó y tiene rol de dueño
-        //Para hacer esto muy seguramente deba modificar el JwtAuthentication para poder extraer de él el correo, o hacer algo similar
-        List<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
-            Invitation invitation = new Invitation();
+        ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
             String userEmail = dto.invitedUserEmail();
             User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
 
-            invitation.setInvitedUser(user);
-            invitation.setRole(dto.role());
-            invitation.setStatus(InvitationStatus.PENDIENTE);
-            invitation.setSession(newSession);
-            return invitation;
-        }).toList();
+            return new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE);
+        }).collect(Collectors.toCollection(ArrayList::new));
+
+        //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        //TODO: esta operacion puede causar problemas a futuro porque hay tres metodos de autenticacion que manejamos: JWT, usuario contraseña y en el futuro OAuth
+        //Es posible que no sirva bien con todos
+        String ownerEmail = (String) auth.getPrincipal();
+        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + ownerEmail));
+        invitedUsers.add(new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+
         newSession.setInvitedUsers(invitedUsers);
+
 
         List<Tag> tags = newSessionDTO.tags().stream().map(dto -> {
             Tag tag = new Tag();

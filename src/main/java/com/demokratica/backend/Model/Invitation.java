@@ -36,4 +36,14 @@ public class Invitation {
     @Column(name = "invitation_status")
     private InvitationStatus status;
     public enum InvitationStatus {PENDIENTE, ACEPTADO, RECHAZADO};
+
+    public Invitation() {
+    }
+    
+    public Invitation(User invitedUser, Session session, Role role, InvitationStatus status) {
+        this.invitedUser = invitedUser;
+        this.session = session;
+        this.role = role;
+        this.status = status;
+    }
 }
