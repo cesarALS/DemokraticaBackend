@@ -70,4 +70,23 @@ public class SessionService {
         sessionsRepository.save(newSession);
     }
 
+    public List<GetSessionsDTO> getSessionsOfUser(String userEmail) {
+        User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
+        List<Invitation> invitations = user.getInvitations();
+        List<GetSessionsDTO> sessions = invitations.stream().map(invitation -> {
+            Session session = invitation.getSession();
+            String title = session.getTitle();
+            String description = session.getDescription();
+            int noParticipants = session.getInvitedUsers().size();
+            int noActivities = session.getActivities().size();
+            boolean isHost = (invitation.getRole() == Invitation.Role.DUEÑO) ? true : false;
+
+            return new GetSessionsDTO(title, description, noParticipants, noActivities, isHost);
+        }).toList();
+
+        return sessions;
+    }
+
+    public record GetSessionsDTO (String title, String description, int noParticipants, int noActivities, boolean isHost) {
+    }
 }

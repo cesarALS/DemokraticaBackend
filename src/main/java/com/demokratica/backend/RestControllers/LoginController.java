@@ -11,7 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 //TODO: poner los public records usados por varias clases en un lugar aparte, para centralizar y eliminar la redundancia
@@ -29,7 +29,9 @@ public class LoginController {
     //TODO: cambiar el nombre endpoint por uno que sea más RESTful 
     //TODO: recibir los parámetros como un JSON en el body
     @PostMapping("/ingrese")
-    public ResponseEntity<?> loginWithPassword(@RequestParam String email, @RequestParam String password) {
+    public ResponseEntity<?> loginWithPassword(@RequestBody LoginRequest loginRequest) {
+        String email = loginRequest.email();
+        String password = loginRequest.password();
         try { 
             userService.authenticateUser(email, password);
         } catch (BadCredentialsException e) {
@@ -45,7 +47,7 @@ public class LoginController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     
-    public record LoginRequest(String username, String password) {
+    public record LoginRequest(String email, String password) {
     }
 
     public record LoginResponse(String username, String email, String jwtToken) {
