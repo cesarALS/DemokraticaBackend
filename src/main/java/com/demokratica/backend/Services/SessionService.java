@@ -1,5 +1,6 @@
 package com.demokratica.backend.Services;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
 import com.demokratica.backend.RestControllers.SessionController.NewSessionDTO;
+import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 
 import io.jsonwebtoken.lang.Collections;
 import jakarta.transaction.Transactional;
@@ -70,4 +72,29 @@ public class SessionService {
         sessionsRepository.save(newSession);
     }
 
+    public List<GetSessionsDTO> getSessionsOfUser(String userEmail) {
+        User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
+        List<Invitation> invitations = user.getInvitations();
+        List<GetSessionsDTO> sessions = invitations.stream().map(invitation -> {
+            Session session = invitation.getSession();
+            String title = session.getTitle();
+            String description = session.getDescription();
+            int noParticipants = session.getInvitedUsers().size();
+            int noActivities = session.getActivities().size();
+            boolean isHost = (invitation.getRole() == Invitation.Role.DUEÑO) ? true : false;
+
+            List<TagDTO> tags = session.getTags().stream().map(tag -> {
+                return new TagDTO(tag.getTagText());
+            }).toList();
+
+            String creationDate = session.getStartTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+            return new GetSessionsDTO(title, description, creationDate, noParticipants, noActivities, isHost, tags);
+        }).toList();
+
+        return sessions;
+    }
+
+    public record GetSessionsDTO (String title, String description, String creationDate, int noParticipants, int noActivities, boolean isHost, List<TagDTO> tags) {
+    }
 }
