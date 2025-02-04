@@ -1,5 +1,6 @@
 package com.demokratica.backend.Services;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -86,12 +87,14 @@ public class SessionService {
                 return new TagDTO(tag.getTagText());
             }).toList();
 
-            return new GetSessionsDTO(title, description, noParticipants, noActivities, isHost, tags);
+            String creationDate = session.getStartTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+            return new GetSessionsDTO(title, description, creationDate, noParticipants, noActivities, isHost, tags);
         }).toList();
 
         return sessions;
     }
 
-    public record GetSessionsDTO (String title, String description, int noParticipants, int noActivities, boolean isHost, List<TagDTO> tags) {
+    public record GetSessionsDTO (String title, String description, String creationDate, int noParticipants, int noActivities, boolean isHost, List<TagDTO> tags) {
     }
 }
