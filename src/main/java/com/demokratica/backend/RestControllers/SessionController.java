@@ -2,9 +2,13 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Tag;
+import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Services.SessionService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,22 +27,17 @@ public class SessionController {
 
     @PostMapping("/sessions")
     public ResponseEntity<?> postMethodName(@RequestBody NewSessionDTO newSessionDTO) {
-        //Esta primera aproximación no incluye ni tags ni listas de invitados, porque no sé cómo hacer la deserealización de
-        //listas todavía
-        String title = newSessionDTO.title();
-        String description = newSessionDTO.description();
-        LocalDateTime startTime = newSessionDTO.startTime();
-        LocalDateTime endTime = newSessionDTO.endTime();
-        try {
-            sessionService.createSession(title, description, startTime, endTime);
-        } catch (Exception e) {
-            throw e;
-        }
+        sessionService.createSession(newSessionDTO);
 
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
     
-    public record NewSessionDTO (String title, String description, LocalDateTime startTime, LocalDateTime endTime) {
+    public record NewSessionDTO (String title, String description, LocalDateTime startTime, LocalDateTime endTime, List<InvitationDTO> invitations, List<TagDTO> tags) {
+    }
 
+    public record InvitationDTO (Invitation.Role role, String invitedUserEmail) {
+    }
+    
+    public record TagDTO(String text) {
     }
 }
