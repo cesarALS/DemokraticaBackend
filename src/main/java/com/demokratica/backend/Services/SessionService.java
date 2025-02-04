@@ -16,6 +16,7 @@ import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
 import com.demokratica.backend.RestControllers.SessionController.NewSessionDTO;
+import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 
 import io.jsonwebtoken.lang.Collections;
 import jakarta.transaction.Transactional;
@@ -81,12 +82,16 @@ public class SessionService {
             int noActivities = session.getActivities().size();
             boolean isHost = (invitation.getRole() == Invitation.Role.DUEÑO) ? true : false;
 
-            return new GetSessionsDTO(title, description, noParticipants, noActivities, isHost);
+            List<TagDTO> tags = session.getTags().stream().map(tag -> {
+                return new TagDTO(tag.getTagText());
+            }).toList();
+
+            return new GetSessionsDTO(title, description, noParticipants, noActivities, isHost, tags);
         }).toList();
 
         return sessions;
     }
 
-    public record GetSessionsDTO (String title, String description, int noParticipants, int noActivities, boolean isHost) {
+    public record GetSessionsDTO (String title, String description, int noParticipants, int noActivities, boolean isHost, List<TagDTO> tags) {
     }
 }
