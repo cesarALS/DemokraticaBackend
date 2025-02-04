@@ -20,7 +20,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
             return null;
         }
 
-        return JwtAuthentication.authenticated();
+        return JwtAuthentication.authenticated(jwtToken);
     }
 
     @Override

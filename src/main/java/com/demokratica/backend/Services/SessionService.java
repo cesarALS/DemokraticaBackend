@@ -1,0 +1,73 @@
+package com.demokratica.backend.Services;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Session;
+import com.demokratica.backend.Model.Tag;
+import com.demokratica.backend.Model.User;
+import com.demokratica.backend.Model.Invitation.InvitationStatus;
+import com.demokratica.backend.Repositories.SessionsRepository;
+import com.demokratica.backend.Repositories.UsersRepository;
+import com.demokratica.backend.RestControllers.SessionController.NewSessionDTO;
+
+import io.jsonwebtoken.lang.Collections;
+import jakarta.transaction.Transactional;
+
+@Service
+public class SessionService {
+    
+    private SessionsRepository sessionsRepository;
+    private UsersRepository usersRepository;
+    public SessionService (SessionsRepository sessionsRepository, UsersRepository usersRepository) {
+        this.sessionsRepository = sessionsRepository;
+        this.usersRepository = usersRepository;
+    }
+
+    @Transactional
+    public void createSession(NewSessionDTO newSessionDTO) {
+        Session newSession = new Session();
+
+        newSession.setTitle(newSessionDTO.title());
+        newSession.setDescription(newSessionDTO.description());
+        newSession.setStartTime(newSessionDTO.startTime());
+        newSession.setEndTime(newSessionDTO.endTime());
+
+        newSession.setActivities(Collections.emptyList());
+
+        ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
+            String userEmail = dto.invitedUserEmail();
+            User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
+
+            return new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE);
+        }).collect(Collectors.toCollection(ArrayList::new));
+
+        //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        //TODO: esta operacion puede causar problemas a futuro porque hay tres metodos de autenticacion que manejamos: JWT, usuario contraseña y en el futuro OAuth
+        //Es posible que no sirva bien con todos
+        String ownerEmail = (String) auth.getPrincipal();
+        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + ownerEmail));
+        invitedUsers.add(new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+
+        newSession.setInvitedUsers(invitedUsers);
+
+
+        List<Tag> tags = newSessionDTO.tags().stream().map(dto -> {
+            Tag tag = new Tag();
+            tag.setTagText(dto.text());
+            tag.setSession(newSession);
+            return tag;
+        }).toList();
+        newSession.setTags(tags);
+        
+        sessionsRepository.save(newSession);
+    }
+
+}

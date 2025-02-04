@@ -17,19 +17,19 @@ public class JwtAuthentication implements Authentication {
     private boolean isAuthenticated;
     private String principal;
     
-    private JwtAuthentication(String jwtToken, List<GrantedAuthority> authorities) {
+    private JwtAuthentication(String jwtToken, List<GrantedAuthority> authorities, boolean isAuthenticated) {
         this.jwtToken = jwtToken;
         this.authorities = authorities;
-        this.isAuthenticated = (jwtToken == null) ? true : false;
-        this.principal = (jwtToken == null) ? null : JWTService.extractEmail(jwtToken);
+        this.isAuthenticated = isAuthenticated;
+        this.principal = JWTService.extractEmail(jwtToken);
     }
 
     public static JwtAuthentication unauthenticated(String jwtToken) {
-        return new JwtAuthentication(jwtToken, Collections.emptyList());
+        return new JwtAuthentication(jwtToken, Collections.emptyList(), false);
     }
 
-    public static JwtAuthentication authenticated() {
-        return new JwtAuthentication(null, AuthorityUtils.createAuthorityList("USER"));
+    public static JwtAuthentication authenticated(String jwtToken) {
+        return new JwtAuthentication(jwtToken, AuthorityUtils.createAuthorityList("USER"), true);
     }
 
     @Override
