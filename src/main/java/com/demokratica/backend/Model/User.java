@@ -2,6 +2,7 @@ package com.demokratica.backend.Model;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -26,7 +27,7 @@ public class User {
     @OneToOne
     private Plan plan;
 
-    @OneToMany(mappedBy= "invitedUser")
+    @OneToMany(mappedBy= "invitedUser", cascade = CascadeType.ALL)
     private List<Invitation> invitations;
     
 }
