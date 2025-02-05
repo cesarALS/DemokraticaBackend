@@ -19,7 +19,7 @@ public class JWTService {
 
     //TODO: crear una llave secreta buena y asegurarla mediante environment variables o algún otro método
     private static final String SECRET_KEY = "vM7VZknE5lS1kT7F7sErmZQ6aH27A7XfYvVNoF1B3l412"; 
-    private static final long expirationTime = 10 * 60 * 1000; //10 min en milisegundos: 10 min * 60 seg por minuto * 1000 ms por segundo
+    private static final long expirationTime = 7 * 24* 60 * 60 * 1000; //7 días en milisegundos: 7 días * 24 horas * 60 min * 60 seg por minuto * 1000 ms por segundo
 
     @Autowired
     private UserService userService;
