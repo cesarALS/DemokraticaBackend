@@ -74,11 +74,9 @@ public class UserService {
     }
 
     @Transactional
-    public void updateUsername(String email, String newUsername, String password) {
+    public void updateUsername(String email, String newUsername) {
         User user = userRepository.findById(email).orElseThrow(() ->
             new UserNotFoundException(email));
-
-        authenticateUser(email, password);
 
         user.setUsername(newUsername);
         userRepository.save(user);

@@ -71,7 +71,7 @@ public class AccountController {
     @PutMapping("/users/{email}")
     public ResponseEntity<?> updateUsername(@PathVariable String email, @RequestBody UsernameChange usernameChange) {
         try {
-            userService.updateUsername(email, usernameChange.newUsername(), usernameChange.password());
+            userService.updateUsername(email, usernameChange.newUsername());
         }
         //TODO: esta lógica se repite demasiado y habría que abstraerla de alguna forma
         catch (UsernameNotFoundException e) {
@@ -89,7 +89,7 @@ public class AccountController {
     public record PasswordChange (String email, String currentPassword, String newPassword) {
     }
 
-    public record UsernameChange (String newUsername, String password) {
+    public record UsernameChange (String newUsername) {
     }
 
     public record JWT (String jwtToken) {
