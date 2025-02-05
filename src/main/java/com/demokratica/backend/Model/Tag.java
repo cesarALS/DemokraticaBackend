@@ -21,6 +21,6 @@ public class Tag {
     @ManyToOne
     @JoinColumn(name = "session_id")
     private Session session;
-    @Column(name = "text", length = 30, nullable = false)
+    @Column(name = "tag_text", length = 30, nullable = false)
     private String tagText;
 }

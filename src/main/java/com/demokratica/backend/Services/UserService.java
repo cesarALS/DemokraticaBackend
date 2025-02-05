@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 import com.demokratica.backend.Exceptions.UserAlreadyExistsException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Authority;
+import com.demokratica.backend.Model.Plan;
 import com.demokratica.backend.Model.User;
 
 import com.demokratica.backend.Repositories.AuthoritiesRepository;
+import com.demokratica.backend.Repositories.PlansRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
 
 import jakarta.transaction.Transactional;
@@ -22,14 +24,16 @@ public class UserService {
     
     private final UsersRepository userRepository;
     private final AuthoritiesRepository authoritiesRepository;
+    private final PlansRepository plansRepository;
     private final PasswordEncoder encoder;
     private final AuthenticationManager authenticationManager;
     
-    public UserService (UsersRepository userRepository, AuthoritiesRepository authoritiesRepository, PasswordEncoder encoder, AuthenticationManager authenticationManager) {
+    public UserService (UsersRepository userRepository, AuthoritiesRepository authoritiesRepository, PlansRepository plansRepository, PasswordEncoder encoder, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.authoritiesRepository = authoritiesRepository;
         this.encoder = encoder;
         this.authenticationManager = authenticationManager;
+        this.plansRepository = plansRepository;
     }
 
     @Transactional
@@ -38,11 +42,17 @@ public class UserService {
             throw new UserAlreadyExistsException(email);
         }
 
+        Plan plan = new Plan();
+        plan.setPlanType(Plan.Type.GRATUITO);
+        //NOTA: al no settear la fecha de expiracion el sistema asumirá que esta es null, que es lo que queremos en este caso
+        plansRepository.save(plan);
+
         User user = new User();
         user.setEmail(email);
         user.setUsername(username);
         user.setPassword(encoder.encode(password));
         user.setEnabled(true);
+        user.setPlan(plan);
         userRepository.save(user);
 
         Authority authority = new Authority();
@@ -53,12 +63,6 @@ public class UserService {
 
     @Transactional
     public void deleteUser(String email) {
-        User user = userRepository.findById(email).orElseThrow(() ->
-                new UserNotFoundException(email));
-        
-        Long id = authoritiesRepository.findByUser(user).getId();
-
-        authoritiesRepository.deleteById(id);
         userRepository.deleteById(email);
     }
 
