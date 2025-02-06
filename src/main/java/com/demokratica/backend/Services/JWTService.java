@@ -71,10 +71,16 @@ public class JWTService {
     }
 
     //TODO: hacer una validación de verdad, teniendo en cuenta tiempos de expiración y la firma digital
-    public static boolean validateToken(String token) {
+    public boolean validateToken(String token) {
         //Asumo que si se pudo ejecutar el método extractAllClaims es porque no se lanzó ninguna excepción de que el token no fuera válido
         try {
             extractAllClaims(token);
+            String tokenUsername = extractUsername(token);
+            String email = extractEmail(token);
+            String databaseUsername = userService.getUsername(email);
+            if (!tokenUsername.equals(databaseUsername)) {
+                throw new JwtException("El username del token no coincide con el de la BD");
+            }
         } catch (JwtException j) {
             return false;
         }

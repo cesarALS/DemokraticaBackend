@@ -1,5 +1,6 @@
 package com.demokratica.backend.Model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,10 +17,11 @@ public class Authority {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
     
     @ManyToOne
-    @JoinColumn(name = "email")
+    @JoinColumn(name = "user_email")
     private User user;
     private String authority;
 }

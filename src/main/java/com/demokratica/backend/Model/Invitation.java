@@ -29,6 +29,7 @@ public class Invitation {
     private Session session;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "user_role")
     private Role role;
     public enum Role {DUEÑO, ADMIN, EDITOR, PARTICIPANTE};
 

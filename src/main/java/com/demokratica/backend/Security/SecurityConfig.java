@@ -44,7 +44,7 @@ public class SecurityConfig {
 	public UserDetailsService getJdbc(DataSource dataSource) {
 		JdbcUserDetailsManager jdbc = new JdbcUserDetailsManager(dataSource);
 		jdbc.setUsersByUsernameQuery("SELECT email,password,enabled FROM users WHERE email = ?");
-		jdbc.setAuthoritiesByUsernameQuery("SELECT email,authority FROM authorities WHERE email = ?");
+		jdbc.setAuthoritiesByUsernameQuery("SELECT user_email,authority FROM authorities WHERE user_email = ?");
 		return jdbc;
 	}
 
