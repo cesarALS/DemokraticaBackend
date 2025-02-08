@@ -20,8 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 /*
  * Esta clase va a contener todos los endpoints para crear todos los distintos tipos de actividades.
@@ -47,9 +45,9 @@ public class ActivitiesController {
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = "";
-        if ("JwtAuthentication".equals(auth.getClass().getName())) {
+        if (JwtAuthentication.class.getName().equals(auth.getClass().getName())) {
             userEmail = (String) auth.getPrincipal();
-        } else if ("UsernamePasswordAuthenticationToken".equals(auth.getClass().getName())) {
+        } else if (UsernamePasswordAuthenticationToken.class.getName().equals(auth.getClass().getName())) {
             userEmail = (String) ((UserDetails) auth.getPrincipal()).getUsername();
         }
 

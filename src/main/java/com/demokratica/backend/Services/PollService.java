@@ -3,6 +3,7 @@ package com.demokratica.backend.Services;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,16 +30,22 @@ import jakarta.transaction.Transactional;
 @Service
 public class PollService {
     
-    @Autowired
     private SessionsRepository sessionsRepository;
-    @Autowired
     private PollsRepository pollsRepository;
-    @Autowired
     private UsersRepository usersRepository;
-    @Autowired
     private UserVoteRepository userVoteRepository;
-    @Autowired
     private PollOptionsRepository pollOptionsRepository;
+
+    public PollService (SessionsRepository sessionsRepository, PollsRepository pollsRepository,
+                        UsersRepository usersRepository, UserVoteRepository userVoteRepository,
+                        PollOptionsRepository pollOptionsRepository) {
+        
+        this.sessionsRepository = sessionsRepository;
+        this.pollsRepository = pollsRepository;
+        this.usersRepository = usersRepository;
+        this.pollOptionsRepository = pollOptionsRepository;
+        this.userVoteRepository = userVoteRepository;                 
+    }
 
     @Transactional
     public void createPoll(NewPollDTO dto, Long sessionId) {
@@ -126,9 +133,18 @@ public class PollService {
         User user = usersRepository.findById(userEmail).orElseThrow(() -> 
             new RuntimeException("Couldn't find user with email " + userEmail + " in the database"));
 
+        //Primero miramos que la opción por la que va a votar sí exista. Si sí existe entonces podemos borrar el voto previo en caso de que 
+        //haya uno y agregar un nuevo voto normalmente
         PollOption pollOption = pollOptionsRepository.findById(optionId).orElseThrow(() ->
             new RuntimeException("Couldnt't find poll option with id " + String.valueOf(optionId) + " in the database"));
-
+        List<UserVote> existingVotes = userVoteRepository.findByUserAndPoll(user, poll);
+        if (existingVotes.size() > 1) {
+            throw new RuntimeException("The user has voted more than once and therefore the DB is in an invalid state");
+        }
+        if (existingVotes.size() == 1) {
+            userVoteRepository.deleteById(existingVotes.get(0).getId());
+        }
+        
         UserVote vote = new UserVote();
         vote.setPoll(poll);
         vote.setUser(user);
