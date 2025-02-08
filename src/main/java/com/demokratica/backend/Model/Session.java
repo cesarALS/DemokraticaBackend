@@ -30,9 +30,9 @@ public class Session {
     private LocalDateTime endTime;
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
-    private List<Tag> tags;
+    private List<SessionTag> tags;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<Invitation> invitedUsers;
-    @OneToMany(mappedBy = "session")
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<Activity> activities;
 }

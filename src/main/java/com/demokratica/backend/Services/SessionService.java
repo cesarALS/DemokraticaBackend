@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Session;
-import com.demokratica.backend.Model.Tag;
+import com.demokratica.backend.Model.SessionTag;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -61,8 +61,8 @@ public class SessionService {
         newSession.setInvitedUsers(invitedUsers);
 
 
-        List<Tag> tags = newSessionDTO.tags().stream().map(dto -> {
-            Tag tag = new Tag();
+        List<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
+            SessionTag tag = new SessionTag();
             tag.setTagText(dto.text());
             tag.setSession(newSession);
             return tag;

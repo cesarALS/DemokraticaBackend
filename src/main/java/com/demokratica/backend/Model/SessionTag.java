@@ -13,7 +13,7 @@ import lombok.Data;
 @Entity
 @Table(name = "session_tags")
 @Data
-public class Tag {
+public class SessionTag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tag_id")
