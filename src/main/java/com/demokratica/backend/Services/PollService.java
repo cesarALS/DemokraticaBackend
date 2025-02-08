@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.PollTag;
+import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.Session;
@@ -126,12 +127,30 @@ public class PollService {
     @Transactional
     public void voteForOption(Long pollId, String userEmail, Long optionId) {
         //TODO: asegurarse de que el usuario ha sido invitado a la sesión de la que forma parte esta votación
-        //TODO: asegurarse de que solo se puede votar una vez. Cualquier intento de votar nuevamente no hace nada o cambia la opcion previa por la opcion nueva
         Poll poll = pollsRepository.findById(pollId).orElseThrow(() -> 
             new RuntimeException("Couldn't find poll with id " + String.valueOf(pollId) + " in the database"));
 
         User user = usersRepository.findById(userEmail).orElseThrow(() -> 
             new RuntimeException("Couldn't find user with email " + userEmail + " in the database"));
+
+        //Vamos a averiguar a qué sesión corresponde la votación, luego cuáles fueron los usuarios invitados a esa sesión y por último ver si 
+        //nuestro usuario forma parte de la lista de invitados. El objetivo es evitar que un usuario participe en votaciones a las que no ha
+        //sido invitado
+        //TODO: hacer este código más elegante, porque ahora mismo todo está hecho muy manualmente. Hibernate debe tener formas de hacerlo 
+        //con una sola línea de código o algo similar
+        Session pollSession = sessionsRepository.findById(poll.getSession().getId()).orElseThrow(() -> 
+            new RuntimeException("Couldn't find an associated session to the poll session"));
+        List<Invitation> invitedUsers = pollSession.getInvitedUsers();
+        List<Invitation> matchingInvitations = invitedUsers.stream().filter(invitation -> {
+            return invitation.getInvitedUser().equals(user);    
+        }).toList();
+        if (matchingInvitations.size() > 1) {
+            throw new RuntimeException("Expected the user with email " + user.getEmail() + 
+                                    "to have been invited to session with id" + String.valueOf(pollSession.getId()) + " only once");
+        }
+        if (matchingInvitations.size() == 0) {
+            throw new RuntimeException("User with email " + user.getEmail() + " wasn't invited to vote in the poll with id " + String.valueOf(poll.getId()));
+        }
 
         //Primero miramos que la opción por la que va a votar sí exista. Si sí existe entonces podemos borrar el voto previo en caso de que 
         //haya uno y agregar un nuevo voto normalmente
