@@ -4,15 +4,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 import com.demokratica.backend.Services.PollService;
+import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 /*
  * Esta clase va a contener todos los endpoints para crear todos los distintos tipos de actividades.
@@ -34,9 +41,27 @@ public class ActivitiesController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
     
+    @GetMapping("/api/sessions/{id}")
+    public ResponseEntity<?> getActivities(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = "";
+        if ("JwtAuthentication".equals(auth.getClass().getName())) {
+            userEmail = (String) auth.getPrincipal();
+        } else if ("UsernamePasswordAuthenticationToken".equals(auth.getClass().getName())) {
+            userEmail = (String) ((UserDetails) auth.getPrincipal()).getUsername();
+        }
+
+        List<PollDTO> userPolls = pollService.getSessionPolls(id, userEmail);
+        return new ResponseEntity<>(userPolls, HttpStatus.OK);
+    }
+
     public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, List<TagDTO> tags, List<PollOptionDTO> pollOptions) {
     }
 
-    public record PollOptionDTO(String description) {
+    public record PollOptionDTO(String description, List<VoterDTO> voters) {
     }
+    
+    public record VoterDTO (String voterEmail) {
+    }
+    
 }
