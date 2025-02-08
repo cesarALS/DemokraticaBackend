@@ -34,5 +34,5 @@ public class Session {
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<Invitation> invitedUsers;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
-    private List<Activity> activities;
+    private List<Poll> polls;
 }

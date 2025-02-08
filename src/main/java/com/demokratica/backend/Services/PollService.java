@@ -5,12 +5,10 @@ import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.demokratica.backend.Model.Activity;
-import com.demokratica.backend.Model.ActivityTag;
+import com.demokratica.backend.Model.PollTag;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.Session;
-import com.demokratica.backend.Model.Activity.ActivityType;
 import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.RestControllers.ActivitiesController.NewPollDTO;
@@ -34,23 +32,27 @@ public class PollService {
         Poll poll = new Poll();
         poll.setSession(session);
 
-        poll.setTitle(dto.title());
-        poll.setDescription(dto.description());
+        String title = dto.title();
+        String description = dto.description();
+        
+        poll.setTitle(title);
+        poll.setDescription(description);
         poll.setStartTime(dto.startTime());
         poll.setEndTime(dto.endTime());
-        poll.setType(ActivityType.VOTACION);
         
         poll.setTags(dto.tags().stream().map(tagDto -> {
-            ActivityTag tag = new ActivityTag();
-            tag.setTagText(dto.description());
-            tag.setActivity(poll);
+            PollTag tag = new PollTag();
+            String tagText = tagDto.text();
+            tag.setTagText(tagText);
+            tag.setPoll(poll);
 
             return tag;
         }).toList());
 
         poll.setOptions(dto.pollOptions().stream().map(optionDto -> {
             PollOption option = new PollOption();
-            option.setDescription(optionDto.description());
+            String optionDescription = optionDto.description();
+            option.setDescription(optionDescription);
             option.setVotes(Collections.emptyList());
             option.setPoll(poll);
 

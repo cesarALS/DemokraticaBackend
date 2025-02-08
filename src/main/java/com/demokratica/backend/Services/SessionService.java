@@ -41,7 +41,7 @@ public class SessionService {
         newSession.setStartTime(newSessionDTO.startTime());
         newSession.setEndTime(newSessionDTO.endTime());
 
-        newSession.setActivities(Collections.emptyList());
+        newSession.setPolls(Collections.emptyList());
 
         ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
             String userEmail = dto.invitedUserEmail();
@@ -80,7 +80,7 @@ public class SessionService {
             String title = session.getTitle();
             String description = session.getDescription();
             int noParticipants = session.getInvitedUsers().size();
-            int noActivities = session.getActivities().size();
+            int noActivities = session.getPolls().size();
             boolean isHost = (invitation.getRole() == Invitation.Role.DUEÑO) ? true : false;
 
             List<TagDTO> tags = session.getTags().stream().map(tag -> {

@@ -11,17 +11,17 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "activity_tags")
+@Table(name = "poll_tags")
 @Data
-public class ActivityTag {
+public class PollTag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tag_id")
     private Long id;
     
     @ManyToOne
-    @JoinColumn(name = "activity_id")
-    private Activity activity;
+    @JoinColumn(name = "poll_id")
+    private Poll poll;
     @Column(name = "tag_text", length = 30, nullable = false)
     private String tagText;
 }
