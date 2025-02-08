@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Session;
-import com.demokratica.backend.Model.Tag;
+import com.demokratica.backend.Model.SessionTag;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -41,7 +41,7 @@ public class SessionService {
         newSession.setStartTime(newSessionDTO.startTime());
         newSession.setEndTime(newSessionDTO.endTime());
 
-        newSession.setActivities(Collections.emptyList());
+        newSession.setPolls(Collections.emptyList());
 
         ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
             String userEmail = dto.invitedUserEmail();
@@ -61,8 +61,8 @@ public class SessionService {
         newSession.setInvitedUsers(invitedUsers);
 
 
-        List<Tag> tags = newSessionDTO.tags().stream().map(dto -> {
-            Tag tag = new Tag();
+        List<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
+            SessionTag tag = new SessionTag();
             tag.setTagText(dto.text());
             tag.setSession(newSession);
             return tag;
@@ -80,7 +80,7 @@ public class SessionService {
             String title = session.getTitle();
             String description = session.getDescription();
             int noParticipants = session.getInvitedUsers().size();
-            int noActivities = session.getActivities().size();
+            int noActivities = session.getPolls().size();
             boolean isHost = (invitation.getRole() == Invitation.Role.DUEÑO) ? true : false;
 
             List<TagDTO> tags = session.getTags().stream().map(tag -> {
