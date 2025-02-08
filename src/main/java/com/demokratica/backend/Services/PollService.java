@@ -12,8 +12,11 @@ import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.User;
+import com.demokratica.backend.Model.UserVote;
+import com.demokratica.backend.Repositories.PollOptionsRepository;
 import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
+import com.demokratica.backend.Repositories.UserVoteRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.RestControllers.ActivitiesController.NewPollDTO;
@@ -32,6 +35,10 @@ public class PollService {
     private PollsRepository pollsRepository;
     @Autowired
     private UsersRepository usersRepository;
+    @Autowired
+    private UserVoteRepository userVoteRepository;
+    @Autowired
+    private PollOptionsRepository pollOptionsRepository;
 
     @Transactional
     public void createPoll(NewPollDTO dto, Long sessionId) {
@@ -98,14 +105,35 @@ public class PollService {
                 List<VoterDTO> voters = option.getVotes().stream().map(vote -> {
                     return new VoterDTO(vote.getUser().getEmail());
                 }).toList();
+                Long id = option.getId();
 
-                return new PollOptionDTO(description, voters);
+                return new PollOptionDTO(id, description, voters);
             }).toList();
 
             return new PollDTO(pollId, pollTitle, pollDescription, startTime, endTime, tags, pollOptions);
         }).toList();
 
         return polls;
+    }
+
+    @Transactional
+    public void voteForOption(Long pollId, String userEmail, Long optionId) {
+        //TODO: asegurarse de que el usuario ha sido invitado a la sesión de la que forma parte esta votación
+        //TODO: asegurarse de que solo se puede votar una vez. Cualquier intento de votar nuevamente no hace nada o cambia la opcion previa por la opcion nueva
+        Poll poll = pollsRepository.findById(pollId).orElseThrow(() -> 
+            new RuntimeException("Couldn't find poll with id " + String.valueOf(pollId) + " in the database"));
+
+        User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+            new RuntimeException("Couldn't find user with email " + userEmail + " in the database"));
+
+        PollOption pollOption = pollOptionsRepository.findById(optionId).orElseThrow(() ->
+            new RuntimeException("Couldnt't find poll option with id " + String.valueOf(optionId) + " in the database"));
+
+        UserVote vote = new UserVote();
+        vote.setPoll(poll);
+        vote.setUser(user);
+        vote.setOption(pollOption);
+        userVoteRepository.save(vote);
     }
 
     public record PollDTO (Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, List<TagDTO> tags, List<PollOptionDTO> pollOptions) {

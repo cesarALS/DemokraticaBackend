@@ -3,6 +3,7 @@ package com.demokratica.backend.RestControllers;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
+import com.demokratica.backend.Security.JwtAuthentication;
 import com.demokratica.backend.Services.PollService;
 import com.demokratica.backend.Services.PollService.PollDTO;
 
@@ -11,6 +12,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -55,13 +57,33 @@ public class ActivitiesController {
         return new ResponseEntity<>(userPolls, HttpStatus.OK);
     }
 
+    @PostMapping("/api/polls/{poll_id}")
+    public ResponseEntity<?> voteForAnOption(@PathVariable Long poll_id, @RequestBody VoteDTO vote) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = "";
+        if (JwtAuthentication.class.getName().equals(auth.getClass().getName())) {
+            userEmail = (String) auth.getPrincipal();
+        } else if (UsernamePasswordAuthenticationToken.class.getName().equals(auth.getClass().getName())) {
+            userEmail = (String) ((UserDetails) auth.getPrincipal()).getUsername();
+        }
+
+        Long optionId = vote.optionId();
+        pollService.voteForOption(poll_id, userEmail, optionId);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+    
     public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, List<TagDTO> tags, List<PollOptionDTO> pollOptions) {
     }
 
-    public record PollOptionDTO(String description, List<VoterDTO> voters) {
+    public record PollOptionDTO(Long id, String description, List<VoterDTO> voters) {
     }
     
     public record VoterDTO (String voterEmail) {
+    }
+
+    public record VoteDTO(Long optionId) {
+
     }
     
 }
