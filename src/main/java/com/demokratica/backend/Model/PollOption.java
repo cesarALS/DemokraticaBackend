@@ -2,6 +2,7 @@ package com.demokratica.backend.Model;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,6 +30,6 @@ public class PollOption {
     @Column(name = "option_description", length = 80)
     private String description;
 
-    @OneToMany(mappedBy = "option")
+    @OneToMany(mappedBy = "option", cascade =  CascadeType.ALL)
     private List<UserVote> votes;
 }

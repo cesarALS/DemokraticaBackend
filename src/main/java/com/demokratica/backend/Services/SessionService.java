@@ -88,13 +88,14 @@ public class SessionService {
             }).toList();
 
             String creationDate = session.getStartTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            Long sessionId = session.getId();
 
-            return new GetSessionsDTO(title, description, creationDate, noParticipants, noActivities, isHost, tags);
+            return new GetSessionsDTO(sessionId, title, description, creationDate, noParticipants, noActivities, isHost, tags);
         }).toList();
 
         return sessions;
     }
 
-    public record GetSessionsDTO (String title, String description, String creationDate, int noParticipants, int noActivities, boolean isHost, List<TagDTO> tags) {
+    public record GetSessionsDTO (Long id, String title, String description, String creationDate, int noParticipants, int noActivities, boolean isHost, List<TagDTO> tags) {
     }
 }

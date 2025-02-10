@@ -34,5 +34,8 @@ public class User {
 
     @OneToMany(mappedBy= "invitedUser", cascade = CascadeType.ALL)
     private List<Invitation> invitations;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserVote> votes;
     
 }
