@@ -3,9 +3,7 @@ package com.demokratica.backend.Services;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.PollTag;
@@ -20,7 +18,6 @@ import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.Repositories.UserVoteRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
-import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.RestControllers.ActivitiesController.NewPollDTO;
 import com.demokratica.backend.RestControllers.ActivitiesController.PollOptionDTO;
 import com.demokratica.backend.RestControllers.ActivitiesController.VoterDTO;

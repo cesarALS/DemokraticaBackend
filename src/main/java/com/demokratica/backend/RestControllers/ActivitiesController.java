@@ -2,8 +2,9 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
-import com.demokratica.backend.Security.JwtAuthentication;
+import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.PollService;
 import com.demokratica.backend.Services.PollService.PollDTO;
 
@@ -12,10 +13,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,32 +40,27 @@ public class ActivitiesController {
     
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = "";
-        if (JwtAuthentication.class.getName().equals(auth.getClass().getName())) {
-            userEmail = (String) auth.getPrincipal();
-        } else if (UsernamePasswordAuthenticationToken.class.getName().equals(auth.getClass().getName())) {
-            userEmail = (String) ((UserDetails) auth.getPrincipal()).getUsername();
-        }
+        try {
+            String userEmail = SecurityConfig.getUsernameFromAuthentication();
+            List<PollDTO> userPolls = pollService.getSessionPolls(id, userEmail);
 
-        List<PollDTO> userPolls = pollService.getSessionPolls(id, userEmail);
-        return new ResponseEntity<>(userPolls, HttpStatus.OK);
+            return new ResponseEntity<>(userPolls, HttpStatus.OK);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        }
     }
 
     @PostMapping("/api/polls/{poll_id}")
     public ResponseEntity<?> voteForAnOption(@PathVariable Long poll_id, @RequestBody VoteDTO vote) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = "";
-        if (JwtAuthentication.class.getName().equals(auth.getClass().getName())) {
-            userEmail = (String) auth.getPrincipal();
-        } else if (UsernamePasswordAuthenticationToken.class.getName().equals(auth.getClass().getName())) {
-            userEmail = (String) ((UserDetails) auth.getPrincipal()).getUsername();
+        try {
+            String userEmail = SecurityConfig.getUsernameFromAuthentication();
+            Long optionId = vote.optionId();
+            pollService.voteForOption(poll_id, userEmail, optionId);
+
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
         }
-
-        Long optionId = vote.optionId();
-        pollService.voteForOption(poll_id, userEmail, optionId);
-
-        return new ResponseEntity<>(HttpStatus.OK);
     }
     
     public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, List<TagDTO> tags, List<PollOptionDTO> pollOptions) {

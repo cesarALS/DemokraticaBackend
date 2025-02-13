@@ -1,5 +1,6 @@
 package com.demokratica.backend.RestControllers;
 
+import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Services.JWTService;
 import com.demokratica.backend.Services.UserService;
@@ -81,9 +82,15 @@ public class AccountController {
         }
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String jwtToken = jwtService.buildToken(auth, userService);
-
-        return new ResponseEntity<>(new JWT(jwtToken), HttpStatus.OK);
+        //TODO: esta lógica se repite demasiado y habría que abstraerla de alguna forma.
+        //¿Qué tal que me dieran ganas de cambiar la parte del Sout o el código de error que retorna?
+        try  {
+            String jwtToken = jwtService.buildToken(auth, userService);
+            return new ResponseEntity<>(new JWT(jwtToken), HttpStatus.OK);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        }
+        
     }
 
     public record PasswordChange (String email, String currentPassword, String newPassword) {
