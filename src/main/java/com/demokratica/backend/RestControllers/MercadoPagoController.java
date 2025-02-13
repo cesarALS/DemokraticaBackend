@@ -1,9 +1,7 @@
 package com.demokratica.backend.RestControllers;
 
 import com.demokratica.backend.Services.MercadoPagoService;
-import com.mercadopago.exceptions.MPException;
 import com.mercadopago.net.HttpStatus;
-import com.mercadopago.exceptions.MPApiException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -12,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/payments")
+//TODO: hay que corregir esto porque prácticamente deshabilita la protección CORS por completo
+//Lo dejo aquí para que los chicos del lab de cripto tengan algo a lo que hacerle un exploit, si es posible
 @CrossOrigin(origins = "*") // Permitir llamadas desde el frontend
 public class MercadoPagoController {
 

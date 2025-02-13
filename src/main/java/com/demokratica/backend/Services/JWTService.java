@@ -6,12 +6,11 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import com.demokratica.backend.Security.JwtAuthentication;
+import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
+import com.demokratica.backend.Security.SecurityConfig;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -29,19 +28,15 @@ public class JWTService {
 
     //Por ahora que la autenticación es solo con correo y contraseña la lógica es más sencilla, pero cuando también pueda ser por
     //OAuth se volverá más compleja
-    public String buildToken(Authentication authentication, UserService userService) {
-        String email = null;
-        if (authentication.getClass().getName().equals(JwtAuthentication.class.getName())) {
-            email = (String) authentication.getPrincipal();
-        } else if (authentication.getClass().getName().equals(UsernamePasswordAuthenticationToken.class.getName())) {
-            email = ((UserDetails) authentication.getPrincipal()).getUsername();
-        } else {
-            //TODO: lidiar con este caso de alguna forma. Debería botar algún tipo de error
-            //throw new RuntimeException("The authentication provided for building a token is neither UsernamePassword nor JWT");
+    public String buildToken(Authentication authentication, UserService userService) throws UnsupportedAuthenticationException {
+        try {
+            String email = SecurityConfig.getUsernameFromAuthentication();
+            String username = userService.getUsername(email);
+            return internalBuildToken(email, username);
+        } catch (UnsupportedAuthenticationException e) {
+            System.out.println(e.getMessage());
+            throw e;
         }
-        
-        String username = userService.getUsername(email);
-        return internalBuildToken(email, username);
     }
 
     //TODO: volverlo este método private y hacer el testing con el método buildToken

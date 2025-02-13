@@ -4,8 +4,10 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,8 +17,12 @@ import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Services.JWTService;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 @Configuration
@@ -32,6 +38,8 @@ public class SecurityConfig {
 		 */
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
+				.requestMatchers(HttpMethod.DELETE, "/api/sessions/").permitAll()
+				//TODO: parchar el problema de seguridad que permite hacer pagos sin autenticarse
 				.requestMatchers("/ingrese", "/unase", "/api/payments/create").permitAll()
 				.anyRequest().authenticated()
 			)
@@ -70,5 +78,19 @@ public class SecurityConfig {
 	@Bean
 	public JwtAuthenticationProvider getJwtAuthProvider() {
 		return new JwtAuthenticationProvider();
+	}
+
+	public static String getUsernameFromAuthentication() throws UnsupportedAuthenticationException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		String email = "";
+		if (auth.getClass().getName().equals(UsernamePasswordAuthenticationToken.class.getName())) {
+			email = (String) ((UserDetails) auth.getPrincipal()).getUsername();
+		} else if (auth.getClass().getName().equals(JwtAuthentication.class.getName())) {
+			email = (String) auth.getPrincipal();
+		} else {
+			throw new UnsupportedAuthenticationException(auth);
+		}
+
+		return email;
 	}
 }

@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Exceptions.UserAlreadyExistsException;
 import com.demokratica.backend.Services.JWTService;
 import com.demokratica.backend.Services.UserService;
@@ -50,10 +51,13 @@ public class SignupController {
         newContext.setAuthentication(auth);
         SecurityContextHolder.setContext(newContext);
 
-        String jwtToken = jwtService.buildToken(auth, userService);
-
-        SignupResponse response = new SignupResponse(signupData.username(), signupData.email(), jwtToken);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        try {
+            String jwtToken = jwtService.buildToken(auth, userService);
+            SignupResponse response = new SignupResponse(signupData.username(), signupData.email(), jwtToken);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        }
     }
     
 
