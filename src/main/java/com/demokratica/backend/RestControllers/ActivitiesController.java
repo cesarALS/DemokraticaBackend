@@ -10,7 +10,6 @@ import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
