@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /*
@@ -48,6 +49,18 @@ public class ActivitiesController {
         } catch (UnsupportedAuthenticationException e) {
             return e.getResponse();
         }
+    }
+
+    @DeleteMapping("/api/polls/{poll_id}")
+    public ResponseEntity<?> deletePoll (@PathVariable Long poll_id) {
+        try {
+            String userEmail = SecurityConfig.getUsernameFromAuthentication();
+            pollService.deletePoll(userEmail, poll_id);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        }
+        
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @PostMapping("/api/polls/{poll_id}")

@@ -2,15 +2,17 @@ package com.demokratica.backend.Services;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.SessionTag;
 import com.demokratica.backend.Model.User;
@@ -19,6 +21,7 @@ import com.demokratica.backend.Model.Invitation.Role;
 import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
+import com.demokratica.backend.RestControllers.SessionController.InvitationDTO;
 import com.demokratica.backend.RestControllers.SessionController.NewSessionDTO;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 
@@ -38,45 +41,132 @@ public class SessionService {
     }
 
     @Transactional
-    public void createSession(NewSessionDTO newSessionDTO) {
+    public void createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
         Session newSession = new Session();
-
-        newSession.setTitle(newSessionDTO.title());
-        newSession.setDescription(newSessionDTO.description());
-        newSession.setStartTime(newSessionDTO.startTime());
-        newSession.setEndTime(newSessionDTO.endTime());
-
-        newSession.setPolls(Collections.emptyList());
+        List<Poll> polls = Collections.emptyList();        
 
         ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
             String userEmail = dto.invitedUserEmail();
-            User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
+            User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+                    new UserNotFoundException(userEmail));
 
             return new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE);
         }).collect(Collectors.toCollection(ArrayList::new));
-
         //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        //TODO: esta operacion puede causar problemas a futuro porque hay tres metodos de autenticacion que manejamos: JWT, usuario contraseña y en el futuro OAuth
-        //Es posible que no sirva bien con todos
-        String ownerEmail = (String) auth.getPrincipal();
-        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + ownerEmail));
+        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
+                    new UserNotFoundException(ownerEmail));
         invitedUsers.add(new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
 
-        newSession.setInvitedUsers(invitedUsers);
-
-
-        List<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
-            SessionTag tag = new SessionTag();
-            tag.setTagText(dto.text());
-            tag.setSession(newSession);
-            return tag;
-        }).toList();
-        newSession.setTags(tags);
-        
-        sessionsRepository.save(newSession);
+        sessionCreateUpdateHelper(newSession, polls, invitedUsers, newSessionDTO);
     }
 
+    @Transactional
+    public void updateSession (Long sessionId, String userEmail, NewSessionDTO updatedSessionDTO) {
+        //Primero hay que verificar que el usuario tenga los permisos necesarios para reconfigurar la sesión (DUEÑO solamente, por ahora)
+        Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
+        if (!role.isPresent() || role.get() != Invitation.Role.DUEÑO) {
+            throw new RuntimeException("User with email " + userEmail + " isn't admin of the session he is trying to update");
+        }
+
+        Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
+                                new RuntimeException("Couldn't find a session with id " + sessionId + " in the database"));
+        
+        List<Poll> polls = session.getPolls();
+
+        /*
+         * El objetivo de este código es determinar qué invitaciones son nuevas y cuáles son antiguas y representan una actualización.
+         * Esto es necesario porque las invitaciones tienen un status de PENDIENTE, ACEPTADO y RECHAZADO. Si un usuario ya aceptó o rechazó,
+         * queremos evitar que esta información se pierda cuando el frontend nos manda una actualización de las invitaciones (como un nuevo
+         * invitado). 
+         * Si un usuario es un nuevo invitado, debemos poner el status de su invitación como PENDIENTE.
+         * Además debemos asegurarnos de que los roles de los nuevos usuarios sean los que nos piden en el JSON y que los roles de los
+         * antiguos invitados sigan siendo los mismos o sean actualizados.
+         * TODO: considerar abstraerlo en una nueva función
+         * TODO: buscar una manera más elegante de hacerlo. Tal vez con operaciones directamente en la BD se pueda
+         */
+        Set<String> oldInvitedUserEmails = session.getInvitations().stream()
+                                                .map(inv -> {
+                                                    return inv.getInvitedUser().getEmail();
+                                                })
+                                                .collect(Collectors.toSet());
+
+        Set<String> newInvitedUserEmails = updatedSessionDTO.invitations().stream()
+                                                .map(InvitationDTO::invitedUserEmail)
+                                                .collect(Collectors.toSet());
+
+        //Para los usuarios identificados con estos correos es necesario actualizar la invitación (rol) si llega a ser necesario. El
+        //status de la invitación se mantiene igual
+        Set<String> commonEmails = new HashSet<>(oldInvitedUserEmails);
+        commonEmails.retainAll(newInvitedUserEmails);
+        //Para los usuarios identificados con estos correos es necesario crear una invitación desde 0, con el rol que está en el JSON
+        //y status PENDIENTE
+        Set<String> newEmails = new HashSet<>(newInvitedUserEmails);
+        newEmails.removeAll(oldInvitedUserEmails);
+
+        ArrayList<Invitation> oldInvitations = new ArrayList<>();
+        for (Invitation invitation : session.getInvitations()) {
+            User user = invitation.getInvitedUser();
+            String invitedUserEmail = user.getEmail();
+            if (commonEmails.contains(invitedUserEmail)) {
+                Invitation.InvitationStatus status = invitation.getStatus();
+                //Valor previo a la actualización
+                Invitation.Role newRole = invitation.getRole();
+                for (InvitationDTO invDto : updatedSessionDTO.invitations()) {
+                    if (invitedUserEmail == invDto.invitedUserEmail()) {
+                        newRole = invDto.role();
+                        break;
+                    }
+                }
+
+                oldInvitations.add(new Invitation(user, session, newRole, status));
+            }
+        }
+
+        ArrayList<Invitation> newInvitations = new ArrayList<>();
+        for (InvitationDTO invDto : updatedSessionDTO.invitations()) {
+            String email = invDto.invitedUserEmail();
+            if (newEmails.contains(email)) {
+                User user = usersRepository.findById(email).orElseThrow(() -> 
+                    new UserNotFoundException(email)
+                );
+                
+                newInvitations.add(new Invitation(user, session, invDto.role(), InvitationStatus.PENDIENTE));
+            }
+        }
+
+        ArrayList<Invitation> entireInvitations = new ArrayList<>();
+        entireInvitations.addAll(oldInvitations);
+        entireInvitations.addAll(newInvitations);
+
+        sessionCreateUpdateHelper(session, polls, entireInvitations, updatedSessionDTO);
+    }
+
+    //Para usarlo para crear sesión, pasarle una nueva sesión
+    //Para usarlo para actualizar una sesión, pasarle la sesión a actualizar
+    //El usuario de esta función...
+    //TODO: agregar soporte para fecha de actualización y fecha de publicación
+    @Transactional
+    private void sessionCreateUpdateHelper (Session session, List<Poll> polls, List<Invitation> invitedUsers, NewSessionDTO newSessionDTO) {
+            session.setTitle(newSessionDTO.title());
+            session.setDescription(newSessionDTO.description());
+            session.setStartTime(newSessionDTO.startTime());
+            session.setEndTime(newSessionDTO.endTime());
+    
+            session.setPolls(polls);
+            session.setInvitations(invitedUsers);
+            
+            //NOTA: Esta lógica es independiente de si se está usando la función para crear o para actualizar
+            List<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
+                SessionTag tag = new SessionTag();
+                tag.setTagText(dto.text());
+                tag.setSession(session);
+                return tag;
+            }).toList();
+            session.setTags(tags);
+            
+            sessionsRepository.save(session);
+    }
+    
     public List<GetSessionsDTO> getSessionsOfUser(String userEmail) {
         User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
         List<Invitation> invitations = user.getInvitations();
@@ -84,7 +174,7 @@ public class SessionService {
             Session session = invitation.getSession();
             String title = session.getTitle();
             String description = session.getDescription();
-            int noParticipants = session.getInvitedUsers().size();
+            int noParticipants = session.getInvitations().size();
             int noActivities = session.getPolls().size();
             boolean isHost = (invitation.getRole() == Invitation.Role.DUEÑO) ? true : false;
 

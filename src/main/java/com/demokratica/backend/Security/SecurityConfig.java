@@ -38,7 +38,7 @@ public class SecurityConfig {
 		 */
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
-				.requestMatchers(HttpMethod.DELETE, "/api/sessions/").permitAll()
+				.requestMatchers(HttpMethod.DELETE, "/api/**").permitAll()
 				//TODO: parchar el problema de seguridad que permite hacer pagos sin autenticarse
 				.requestMatchers("/ingrese", "/unase", "/api/payments/create").permitAll()
 				.anyRequest().authenticated()
