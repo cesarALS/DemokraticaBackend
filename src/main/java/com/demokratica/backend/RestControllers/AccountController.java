@@ -5,9 +5,6 @@ import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Services.JWTService;
 import com.demokratica.backend.Services.UserService;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,7 +17,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.GetMapping;
+
+
 
 @RestController
 public class AccountController {
@@ -84,6 +82,8 @@ public class AccountController {
         }
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        //TODO: esta lógica se repite demasiado y habría que abstraerla de alguna forma.
+        //¿Qué tal que me dieran ganas de cambiar la parte del Sout o el código de error que retorna?
         try  {
             String jwtToken = jwtService.buildToken(auth, userService);
             return new ResponseEntity<>(new JWT(jwtToken), HttpStatus.OK);
@@ -92,22 +92,6 @@ public class AccountController {
         }
         
     }
-
-    @GetMapping("/api/users")
-    public ResponseEntity<?> emailIsTaken(@RequestBody EmailDTO dto) {
-        Map<String, Boolean> response = new HashMap<>();
-        if (userService.existsById(dto.email())) {
-            response.put("exists", true);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-
-        response.put("exists", false);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-    
-    public record EmailDTO (String email) {
-    }
-    
 
     public record PasswordChange (String email, String currentPassword, String newPassword) {
     }

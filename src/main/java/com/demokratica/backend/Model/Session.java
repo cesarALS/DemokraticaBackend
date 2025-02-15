@@ -32,7 +32,7 @@ public class Session {
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<SessionTag> tags;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
-    private List<Invitation> invitations;
+    private List<Invitation> invitedUsers;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<Poll> polls;
 }
