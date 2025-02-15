@@ -1,8 +1,9 @@
 package com.demokratica.backend.Services;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -69,23 +70,23 @@ public class PollService {
             tag.setPoll(poll);
 
             return tag;
-        }).toList());
+        }).collect(Collectors.toCollection(ArrayList::new)));
 
         poll.setOptions(dto.pollOptions().stream().map(optionDto -> {
             PollOption option = new PollOption();
             String optionDescription = optionDto.description();
             option.setDescription(optionDescription);
-            option.setVotes(Collections.emptyList());
+            option.setVotes(new ArrayList<>());
             option.setPoll(poll);
 
             return option;
-        }).toList());
+        }).collect(Collectors.toCollection(ArrayList::new)));
         
         pollsRepository.save(poll);
     }
 
     @Transactional
-    public List<PollDTO> getSessionPolls (Long sessionId, String userEmail) {
+    public ArrayList<PollDTO> getSessionPolls (Long sessionId, String userEmail) {
         //TODO: asegurarse de que el usuario que trata de acceder a la sesión sí ha sido invitado a esa sesión
         //User user = usersRepository.findById(userEmail).orElseThrow(() -> 
           //  new RuntimeException("Couldn't find user with email " + userEmail + "in the database"));
@@ -93,32 +94,43 @@ public class PollService {
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
             new RuntimeException("Couldn't find session with session id " + sessionId));
 
-        List<PollDTO> polls = session.getPolls().stream().map(poll -> {
+        ArrayList<PollDTO> polls = session.getPolls().stream().map(poll -> {
             Long pollId = poll.getId();
             String pollTitle = poll.getTitle();
             String pollDescription = poll.getDescription();
             LocalDateTime startTime = poll.getStartTime();
             LocalDateTime endTime = poll.getEndTime();
 
-            List<TagDTO> tags = poll.getTags().stream().map(tag -> {
+            ArrayList<TagDTO> tags = poll.getTags().stream().map(tag -> {
                 return new TagDTO(tag.getTagText());
-            }).toList();
+            }).collect(Collectors.toCollection(ArrayList::new));
 
-            List<PollOptionDTO> pollOptions = poll.getOptions().stream().map(option -> {
+            ArrayList<PollOptionDTO> pollOptions = poll.getOptions().stream().map(option -> {
                 
                 String description = option.getDescription();
-                List<VoterDTO> voters = option.getVotes().stream().map(vote -> {
+                ArrayList<VoterDTO> voters = option.getVotes().stream().map(vote -> {
                     return new VoterDTO(vote.getUser().getEmail());
-                }).toList();
+                }).collect(Collectors.toCollection(ArrayList::new));
                 Long id = option.getId();
 
                 return new PollOptionDTO(id, description, voters);
-            }).toList();
+            }).collect(Collectors.toCollection(ArrayList::new));
 
             return new PollDTO(pollId, pollTitle, pollDescription, startTime, endTime, tags, pollOptions);
-        }).toList();
+        }).collect(Collectors.toCollection(ArrayList::new));
 
         return polls;
+    }
+
+    @Transactional
+    public void deletePoll(String userEmail, Long id) {
+        //Por razones de seguridad un usuario solo debería poder borrar una votación de una sesión de la que es dueño/host/anfitrión
+        Optional<Invitation.Role> role = pollsRepository.findPollOwner(id, userEmail);
+        if (role.isPresent() && role.get() == Invitation.Role.DUEÑO) {
+            pollsRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("User with email " + userEmail + " doesn't have permission to delete poll with id " + id);
+        }
     }
 
     @Transactional
@@ -137,10 +149,10 @@ public class PollService {
         //con una sola línea de código o algo similar
         Session pollSession = sessionsRepository.findById(poll.getSession().getId()).orElseThrow(() -> 
             new RuntimeException("Couldn't find an associated session to the poll session"));
-        List<Invitation> invitedUsers = pollSession.getInvitedUsers();
-        List<Invitation> matchingInvitations = invitedUsers.stream().filter(invitation -> {
+        ArrayList<Invitation> invitedUsers = new ArrayList<>(pollSession.getInvitations());
+        ArrayList<Invitation> matchingInvitations = invitedUsers.stream().filter(invitation -> {
             return invitation.getInvitedUser().equals(user);    
-        }).toList();
+        }).collect(Collectors.toCollection(ArrayList::new));
         if (matchingInvitations.size() > 1) {
             throw new RuntimeException("Expected the user with email " + user.getEmail() + 
                                     "to have been invited to session with id" + String.valueOf(pollSession.getId()) + " only once");
@@ -153,7 +165,7 @@ public class PollService {
         //haya uno y agregar un nuevo voto normalmente
         PollOption pollOption = pollOptionsRepository.findById(optionId).orElseThrow(() ->
             new RuntimeException("Couldnt't find poll option with id " + String.valueOf(optionId) + " in the database"));
-        List<UserVote> existingVotes = userVoteRepository.findByUserAndPoll(user, poll);
+        ArrayList<UserVote> existingVotes = new ArrayList<>(userVoteRepository.findByUserAndPoll(user, poll));
         if (existingVotes.size() > 1) {
             throw new RuntimeException("The user has voted more than once and therefore the DB is in an invalid state");
         }
@@ -168,7 +180,7 @@ public class PollService {
         userVoteRepository.save(vote);
     }
 
-    public record PollDTO (Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, List<TagDTO> tags, List<PollOptionDTO> pollOptions) {
+    public record PollDTO (Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
     }
 
 }
