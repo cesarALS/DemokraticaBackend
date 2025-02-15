@@ -30,7 +30,7 @@ public class SessionController {
         this.sessionService = sessionService;
     }
 
-    @GetMapping("/sessions")
+    @GetMapping("/api/sessions")
     public ResponseEntity<?> returnAllUserSessions() {
         try {
             String userEmail = SecurityConfig.getUsernameFromAuthentication();
@@ -41,7 +41,7 @@ public class SessionController {
         }
     }
 
-    @PostMapping("/sessions")
+    @PostMapping("/api/sessions")
     public ResponseEntity<?> createNewSession(@RequestBody NewSessionDTO newSessionDTO) {
         sessionService.createSession(newSessionDTO);
 
