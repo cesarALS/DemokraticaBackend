@@ -3,6 +3,7 @@ package com.demokratica.backend.Services;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -122,6 +123,17 @@ public class PollService {
     }
 
     @Transactional
+    public void deletePoll(String userEmail, Long id) {
+        //Por razones de seguridad un usuario solo debería poder borrar una votación de una sesión de la que es dueño/host/anfitrión
+        Optional<Invitation.Role> role = pollsRepository.findPollOwner(id, userEmail);
+        if (role.isPresent() && role.get() == Invitation.Role.DUEÑO) {
+            pollsRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("User with email " + userEmail + " doesn't have permission to delete poll with id " + id);
+        }
+    }
+
+    @Transactional
     public void voteForOption(Long pollId, String userEmail, Long optionId) {
         //TODO: asegurarse de que el usuario ha sido invitado a la sesión de la que forma parte esta votación
         Poll poll = pollsRepository.findById(pollId).orElseThrow(() -> 
@@ -137,7 +149,7 @@ public class PollService {
         //con una sola línea de código o algo similar
         Session pollSession = sessionsRepository.findById(poll.getSession().getId()).orElseThrow(() -> 
             new RuntimeException("Couldn't find an associated session to the poll session"));
-        List<Invitation> invitedUsers = pollSession.getInvitedUsers();
+        List<Invitation> invitedUsers = pollSession.getInvitations();
         List<Invitation> matchingInvitations = invitedUsers.stream().filter(invitation -> {
             return invitation.getInvitedUser().equals(user);    
         }).toList();
