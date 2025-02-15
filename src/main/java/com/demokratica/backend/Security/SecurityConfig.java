@@ -40,7 +40,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(HttpMethod.DELETE, "/api/sessions/").permitAll()
 				//TODO: parchar el problema de seguridad que permite hacer pagos sin autenticarse
-				.requestMatchers("/ingrese", "/unase", "/api/payments/create").permitAll()
+				.requestMatchers("/api/auth/login", "/api/auth/signup", "/api/payments/create").permitAll()
 				.anyRequest().authenticated()
 			)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

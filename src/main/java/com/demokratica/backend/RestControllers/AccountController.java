@@ -14,10 +14,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
-
 
 
 @RestController
@@ -30,9 +28,8 @@ public class AccountController {
         this.jwtService = jwtService;
     }
 
-    //TODO: cambiar el nombre del endpoint por uno que sea más RESTful
-    @PostMapping("/actualizar_contraseña")
-    public ResponseEntity<?> updatePassword(@RequestBody PasswordChange passwordChange) {
+    @PutMapping("/api/users/{id}/password")
+    public ResponseEntity<?> updatePassword(@PathVariable String userEmail, @RequestBody PasswordChange passwordChange) {
         /*
          * Estoy asumiendo que en el formulario para actualizar la contraseña pide la contraseña actual por razones
          * de seguridad (para que si deja la cuenta abierta otro no pueda llegar a cambiarle la contraseña)
@@ -40,7 +37,7 @@ public class AccountController {
          * Luego sí se hace la actualización
          */
         try {
-            userService.updatePassword(passwordChange.email(), passwordChange.currentPassword(), passwordChange.newPassword());
+            userService.updatePassword(userEmail, passwordChange.currentPassword(), passwordChange.newPassword());
         } catch (UserNotFoundException e) {
             ErrorResponse error = new ErrorResponse(e.getMessage());
             return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
@@ -55,7 +52,7 @@ public class AccountController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @DeleteMapping("users/{email}")
+    @DeleteMapping("/api/users/{email}")
     public ResponseEntity<?> deleteAccount (@PathVariable String email, @RequestBody PasswordRequest request) {
         try {
             userService.authenticateUser(email, request.password());
@@ -69,7 +66,7 @@ public class AccountController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PutMapping("/users/{email}")
+    @PutMapping("/api/users/{email}/username")
     public ResponseEntity<?> updateUsername(@PathVariable String email, @RequestBody UsernameChange usernameChange) {
         try {
             userService.updateUsername(email, usernameChange.newUsername());
@@ -93,7 +90,7 @@ public class AccountController {
         
     }
 
-    public record PasswordChange (String email, String currentPassword, String newPassword) {
+    public record PasswordChange (String currentPassword, String newPassword) {
     }
 
     public record UsernameChange (String newUsername) {

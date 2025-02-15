@@ -29,7 +29,7 @@ public class LoginController {
     
     //TODO: cambiar el nombre endpoint por uno que sea más RESTful 
     //TODO: recibir los parámetros como un JSON en el body
-    @PostMapping("/ingrese")
+    @PostMapping("/api/auth/login")
     public ResponseEntity<?> loginWithPassword(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.email();
         String password = loginRequest.password();

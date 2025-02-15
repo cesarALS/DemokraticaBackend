@@ -24,7 +24,7 @@ public class JWTController {
     @Autowired
     private JWTService jwtService;
     
-    @GetMapping("/token-info")
+    @GetMapping("/api/auth/JWT-info")
     public ResponseEntity<?> getTokenInfo(HttpServletRequest request) {
 
         String authHeader = request.getHeader("Authorization");
