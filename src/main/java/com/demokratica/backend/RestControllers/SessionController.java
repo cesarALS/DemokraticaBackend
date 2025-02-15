@@ -8,6 +8,8 @@ import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.SessionService;
 import com.demokratica.backend.Services.SessionService.GetSessionsDTO;
 
+import io.micrometer.core.ipc.http.HttpSender.Request;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+
 
 
 
@@ -43,11 +47,26 @@ public class SessionController {
 
     @PostMapping("/sessions")
     public ResponseEntity<?> createNewSession(@RequestBody NewSessionDTO newSessionDTO) {
-        sessionService.createSession(newSessionDTO);
-
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        try {
+            String userEmail = SecurityConfig.getUsernameFromAuthentication();
+            sessionService.createSession(userEmail, newSessionDTO);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        }
     }
 
+    @PutMapping("api/sessions/{id}")
+    public ResponseEntity<?> updateSession(@PathVariable Long id, @RequestBody NewSessionDTO dto) {
+        try {
+            String userEmail = SecurityConfig.getUsernameFromAuthentication();
+            sessionService.updateSession(id, userEmail, dto);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        }
+    }
+    
     //Retornar 204 (No Content) si se borró exitosamente, 403 (Forbidden) en caso de que no tenga autorización o el recurso no exista
     //No se envía un 404 (Not Found) porque esa  información podría ser usada por un atacante para averiguar las IDs de los recursos
     //existentes
