@@ -1,5 +1,7 @@
 package com.demokratica.backend.RestControllers;
 
+import java.util.ArrayList;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -46,7 +48,8 @@ public class SignupController {
         //Le decimos a Spring Security que un usuario recién registrado ya está autenticado y que usó el método de usuario y contraseña
         //Alternativamente podríamos hacer la autenticación después de crear el JWT y decirle que se autenticó usando un JWT, pero estaríamos mintiendo
         UserDetails userDetails = userDetailsService.loadUserByUsername(signupData.email());
-        Authentication auth = UsernamePasswordAuthenticationToken.authenticated(userDetails, null, AuthorityUtils.createAuthorityList("USER"));
+        Authentication auth = UsernamePasswordAuthenticationToken.authenticated(userDetails, null, 
+                                    new ArrayList<>(AuthorityUtils.createAuthorityList("USER")));
         SecurityContext newContext = SecurityContextHolder.createEmptyContext();
         newContext.setAuthentication(auth);
         SecurityContextHolder.setContext(newContext);

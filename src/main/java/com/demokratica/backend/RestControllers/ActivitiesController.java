@@ -9,13 +9,14 @@ import com.demokratica.backend.Services.PollService;
 import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /*
@@ -42,7 +43,7 @@ public class ActivitiesController {
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         try {
             String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            List<PollDTO> userPolls = pollService.getSessionPolls(id, userEmail);
+            ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id, userEmail));
 
             return new ResponseEntity<>(userPolls, HttpStatus.OK);
         } catch (UnsupportedAuthenticationException e) {
@@ -62,11 +63,23 @@ public class ActivitiesController {
             return e.getResponse();
         }
     }
+
+    @DeleteMapping("/api/polls/{poll_id}")
+    public ResponseEntity<?> deletePoll (@PathVariable Long poll_id) {
+        try {
+            String userEmail = SecurityConfig.getUsernameFromAuthentication();
+            pollService.deletePoll(userEmail, poll_id);
+        } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        }
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
     
-    public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, List<TagDTO> tags, List<PollOptionDTO> pollOptions) {
+    public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
     }
 
-    public record PollOptionDTO(Long id, String description, List<VoterDTO> voters) {
+    public record PollOptionDTO(Long id, String description, ArrayList<VoterDTO> voters) {
     }
     
     public record VoterDTO (String voterEmail) {
