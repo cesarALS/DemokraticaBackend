@@ -1,17 +1,12 @@
 package com.demokratica.backend.Services;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -24,16 +19,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.test.annotation.Rollback;
 
 import com.demokratica.backend.Exceptions.InvalidInvitationsException;
-import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
-import com.demokratica.backend.Model.Invitation.InvitationStatus;
-import com.demokratica.backend.Model.Session;
-import com.demokratica.backend.Model.SessionTag;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -44,6 +35,7 @@ import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class SessionServiceTest {
     
     @Mock
@@ -76,6 +68,7 @@ public class SessionServiceTest {
         User invitedUser = new User();
         invitedUser.setEmail(invitedUserEmail);
 
+        //Para que no haya problemas con la parte del servicio que detecta cuando un usuario no está registrado
         when(usersRepository.findById(ownerEmail)).thenReturn(Optional.of(owner));
         when(usersRepository.findById(invitedUserEmail)).thenReturn(Optional.of(invitedUser));
     }
@@ -88,9 +81,7 @@ public class SessionServiceTest {
         ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
-
-        NewSessionDTO dto = this.createMockSession(invitationDTOs);
-        this.validateSavedInvitations(2, dto, InvalidInvitationsException.Type.INVITED_TWICE);
+        this.validateErrorDetection(invitationDTOs, InvalidInvitationsException.Type.INVITED_TWICE);
     }
 
     @Test
@@ -102,8 +93,7 @@ public class SessionServiceTest {
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
         invitationDTOs.add(new InvitationDTO(Invitation.Role.EDITOR, invitedUserEmail));
         invitationDTOs.add(new InvitationDTO(Invitation.Role.ADMIN, invitedUserEmail));
-
-        this.validateSavedInvitations(2, this.createMockSession(invitationDTOs), InvalidInvitationsException.Type.INVITED_TWICE_DIFF_ROLE);
+        this.validateErrorDetection(invitationDTOs, InvalidInvitationsException.Type.INVITED_TWICE_DIFF_ROLE);
     }
 
     @Test
@@ -113,8 +103,7 @@ public class SessionServiceTest {
     public void inviteOwner() {
         ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, ownerEmail));
-
-        this.validateSavedInvitations(1, this.createMockSession(invitationDTOs), InvalidInvitationsException.Type.INVITED_OWNER);
+        this.validateErrorDetection(invitationDTOs, InvalidInvitationsException.Type.INVITED_OWNER);
     }
 
     @Test
@@ -124,57 +113,12 @@ public class SessionServiceTest {
     public void inviteWithOwnerRole() {
         ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
         invitationDTOs.add(new InvitationDTO(Invitation.Role.DUEÑO, invitedUserEmail));
-
-        this.validateSavedInvitations(1, this.createMockSession(invitationDTOs), InvalidInvitationsException.Type.INVITED_ADDITIONAL_OWNER);
+        this.validateErrorDetection(invitationDTOs, InvalidInvitationsException.Type.INVITED_ADDITIONAL_OWNER);
     }
 
-    public NewSessionDTO createMockSession(ArrayList<InvitationDTO> invitationDTOs) {
-        NewSessionDTO newSessionDTO = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
-        Session mockSession = new Session();
-        mockSession.setTitle(newSessionDTO.title());
-        mockSession.setDescription(newSessionDTO.description());
-        mockSession.setStartTime(newSessionDTO.startTime());
-        mockSession.setEndTime(newSessionDTO.endTime());
-
-        mockSession.setPolls(Collections.emptySet());
-        Set<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
-            SessionTag tag = new SessionTag();
-            tag.setTagText(dto.text());
-            tag.setSession(mockSession);
-            return tag;
-        }).collect(Collectors.toSet());
-        mockSession.setTags(tags);
-
-        Set<Invitation> invitedUsers = new HashSet<>();
-        //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
-        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
-                    new UserNotFoundException(ownerEmail));
-        invitedUsers.add(new Invitation(owner, mockSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
-        mockSession.setInvitations(invitedUsers);
-        invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
-            String userEmail = dto.invitedUserEmail();
-            User user = usersRepository.findById(userEmail).orElseThrow(() -> 
-                    new UserNotFoundException(userEmail));
-
-            return new Invitation(user, mockSession, dto.role(), InvitationStatus.PENDIENTE);
-        }).collect(Collectors.toSet());
-
-        mockSession.setId(1L);
-
-        /*when(sessionsRepository.save(any(Session.class))).thenReturn(mockSession);
-        when(sessionsRepository.findById(1L)).thenReturn(Optional.of(mockSession));*/
-
-        return newSessionDTO;
-    }
-
-    public void validateSavedInvitations(int expectedValue, NewSessionDTO dto, InvalidInvitationsException.Type errorType) {
+    public void validateErrorDetection(ArrayList<InvitationDTO> invitationDTOs, InvalidInvitationsException.Type errorType) {
+        NewSessionDTO dto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
         InvalidInvitationsException e = assertThrows(InvalidInvitationsException.class, () -> sessionService.createSession(ownerEmail, dto));
         Assertions.assertThat(e.getErrorType()).isEqualTo(errorType);
-        
-        /*Optional<Session> session = sessionsRepository.findById(1L);
-        Assertions.assertThat(session.isPresent());
-        ArrayList<Invitation> savedInvitations = new ArrayList<>(session.get().getInvitations());
-        Assertions.assertThat(savedInvitations.size()).isEqualTo(expectedValue);*/
-        
     }
 }
