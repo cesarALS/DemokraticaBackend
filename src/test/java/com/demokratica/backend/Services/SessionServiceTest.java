@@ -27,6 +27,7 @@ import com.demokratica.backend.Exceptions.InvalidInvitationsException;
 import com.demokratica.backend.Exceptions.InvalidTagsException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Session;
+import com.demokratica.backend.Model.SessionTag;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -141,9 +142,10 @@ public class SessionServiceTest {
 
     @Test
     @Order(6)
-    @DisplayName("Prueba 6: actualizar una sesión y verificar el resultado")
+    @DisplayName("Prueba 6: actualizar invitados a una sesión y verificar el resultado")
     @Rollback(value = true)
-    public void updateSessionTest() {
+    //TODO: 
+    public void updateInvitedUsersTest() {
         //La idea es crear una primera sesión con un solo invitado (o sea dos participantes) y en la actualización no mandar ninguno
         //El resultado debería ser una lista con solo 1 participante (el dueño), si está funcionando correctamente
         ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
@@ -162,5 +164,24 @@ public class SessionServiceTest {
         Session updatedSession = sessionService.updateSession(1L, ownerEmail, updatedDto);
 
         Assertions.assertThat(updatedSession.getInvitations().size()).isEqualTo(1);
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("Prueba 7: actualizar tags de una sesión y verificar el resultado")
+    @Rollback(value = true)
+    public void updateSessionTagsTest() {
+        tags = new ArrayList<>(List.of(new TagDTO("Tag original")));
+        NewSessionDTO firstDto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
+        //Si pasó las pruebas anteriores no debería lanzar ninguna excepción aquí
+        Session originalSession = sessionService.createSession(ownerEmail, firstDto);
+        Assertions.assertThat(originalSession.getTags().size()).isEqualTo(1);
+
+        tags = new ArrayList<>(List.of(new TagDTO("Tag actualizado")));
+        NewSessionDTO updatedDto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
+        Session updatedSession = sessionService.createSession(ownerEmail, updatedDto);
+        //No debería aparecer el tag original, porque entonces significa que estamos añadiendo en lugar de actualizando
+        Assertions.assertThat(updatedSession.getTags().size()).isEqualTo(1);
+        Assertions.assertThat(updatedSession.getTags().iterator().next()).isEqualTo("Tag actualizado");
     }
 }
