@@ -24,6 +24,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.test.annotation.Rollback;
 
 import com.demokratica.backend.Exceptions.InvalidInvitationsException;
+import com.demokratica.backend.Exceptions.InvalidTagsException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Repositories.InvitationsRepository;
@@ -56,12 +57,17 @@ public class SessionServiceTest {
     private String sessionDescription = "Probando el servicio de sesiones";
     private LocalDateTime startTime = LocalDateTime.now();
     private LocalDateTime endTime = startTime.plusHours(1);
-    private ArrayList<TagDTO> tags = new ArrayList<>(List.of(new TagDTO("Prueba unitaria"), new TagDTO("Servicio de sesiones")));
+    //Lo inicializo en el setup y no aquí para permitirme enviar tags repetidos (mismo texto) y probar que detecte el problema
+    private ArrayList<TagDTO> tags;
+    private ArrayList<InvitationDTO> invitationDTOs;
     private String ownerEmail = "owner@gmail.com";
     private String invitedUserEmail = "invitedUser@gmail.com";
 
     @BeforeEach
     public void setup() {
+        tags = new ArrayList<>(List.of(new TagDTO("Prueba unitaria"), new TagDTO("Servicio de sesiones")));
+        //La inicializamos vacía para que así cada test pueda poner las invitaciones que quiera
+        invitationDTOs = new ArrayList<>();
         User owner = new User();
         owner.setEmail(ownerEmail);
 
@@ -78,7 +84,6 @@ public class SessionServiceTest {
     @DisplayName("Prueba 1: invitar varias veces al mismo usuario")
     @Rollback(value = true)
     public void inviteSameUserTwice() {
-        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
         this.validateErrorDetection(invitationDTOs, InvalidInvitationsException.Type.INVITED_TWICE);
@@ -89,7 +94,6 @@ public class SessionServiceTest {
     @DisplayName("Prueba 2: invitar al mismo usuario con roles distintos")
     @Rollback(value = true)
     public void inviteSameUserDifferentRoles() {
-        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
         invitationDTOs.add(new InvitationDTO(Invitation.Role.EDITOR, invitedUserEmail));
         invitationDTOs.add(new InvitationDTO(Invitation.Role.ADMIN, invitedUserEmail));
@@ -101,7 +105,6 @@ public class SessionServiceTest {
     @DisplayName("Prueba 3: invitar al dueño")
     @Rollback(value = true)
     public void inviteOwner() {
-        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, ownerEmail));
         this.validateErrorDetection(invitationDTOs, InvalidInvitationsException.Type.INVITED_OWNER);
     }
@@ -111,7 +114,6 @@ public class SessionServiceTest {
     @DisplayName("Prueba 4: invitar a alguien con rol de dueño")
     @Rollback(value = true)
     public void inviteWithOwnerRole() {
-        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
         invitationDTOs.add(new InvitationDTO(Invitation.Role.DUEÑO, invitedUserEmail));
         this.validateErrorDetection(invitationDTOs, InvalidInvitationsException.Type.INVITED_ADDITIONAL_OWNER);
     }
@@ -120,5 +122,17 @@ public class SessionServiceTest {
         NewSessionDTO dto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
         InvalidInvitationsException e = assertThrows(InvalidInvitationsException.class, () -> sessionService.createSession(ownerEmail, dto));
         Assertions.assertThat(e.getErrorType()).isEqualTo(errorType);
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("Prueba 5: enviar tags repetidos (mismo texto)")
+    @Rollback(value = true)
+    public void sendDuplicatedTags() {
+        //TODO: si mis excepciones personalizadas tuvieran un diseño POO más elegante sería posible hacer esto sin reduplicar tanto
+        //código (últimas dos líneas)
+        tags = new ArrayList<>(List.of(new TagDTO("Tag repetido"), new TagDTO("Tag repetido")));
+        NewSessionDTO dto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
+        assertThrows(InvalidTagsException.class, () -> sessionService.createSession(ownerEmail, dto));
     }
 }

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Exceptions.InvalidInvitationsException;
+import com.demokratica.backend.Exceptions.InvalidTagsException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
@@ -92,7 +93,7 @@ public class SessionService {
         Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
         role.ifPresent(presentRole -> {
             if (presentRole != Invitation.Role.DUEÑO) {
-                throw new RuntimeException("User with email " + userEmail + " isn't admin of the session he is trying to update");    
+                throw new RuntimeException("User with email " + userEmail + " isn't owner of the session he is trying to update");    
             }
         });
 
@@ -131,11 +132,12 @@ public class SessionService {
         Set<String> newEmails = new HashSet<>(newInvitedUserEmails);
         newEmails.removeAll(oldInvitedUserEmails);
 
-        /* ArrayList<Invitation> oldInvitations = new ArrayList<>();
+        ArrayList<Invitation> oldInvitations = new ArrayList<>();
         for (Invitation invitation : session.getInvitations()) {
             User user = invitation.getInvitedUser();
             String invitedUserEmail = user.getEmail();
             if (commonEmails.contains(invitedUserEmail)) {
+                //Si el usuario ya había aceptado la invitación debemos preservar esto en la sesión actualizada
                 Invitation.InvitationStatus status = invitation.getStatus();
                 //Valor previo a la actualización
                 Invitation.Role newRole = invitation.getRole();
@@ -166,12 +168,9 @@ public class SessionService {
         entireInvitations.addAll(oldInvitations);
         entireInvitations.addAll(newInvitations);
 
-        sessionCreateUpdateHelper(session, polls, entireInvitations, updatedSessionDTO); */
+        sessionCreateUpdateHelper(session, polls, new HashSet<>(entireInvitations), updatedSessionDTO); 
     }
 
-    //Para usarlo para crear sesión, pasarle una nueva sesión
-    //Para usarlo para actualizar una sesión, pasarle la sesión a actualizar
-    //El usuario de esta función...
     //TODO: agregar soporte para fecha de actualización y fecha de publicación
     @Transactional
     private void sessionCreateUpdateHelper (Session session, Set<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
@@ -184,18 +183,20 @@ public class SessionService {
             session.setInvitations(invitations);
             
             //NOTA: Esta lógica es independiente de si se está usando la función para crear o para actualizar
-            Map<String, SessionTag> tags = new HashMap<>();
+            //Queremos evitar que se agreguen dos tags idénticos (mismo texto). Para eso está esta este HashMap y esta lógica
+            Map<String, SessionTag> tagsMap = new HashMap<>();
             for (TagDTO dto : newSessionDTO.tags()) {
-                //No vamos a permitir agregar dos tags con el mismo texto porque eso los haría idénticos
-                if (tags.containsKey(dto.text())) {
-                    
+                if (tagsMap.containsKey(dto.text())) {
+                    throw new InvalidTagsException();                    
                 }
 
                 SessionTag tag = new SessionTag();
                 tag.setTagText(dto.text());
                 tag.setSession(session);
+
+                tagsMap.put(dto.text(), tag);
             }
-            session.setTags(new HashSet<>(tags.values()));
+            session.setTags(new HashSet<>(tagsMap.values()));
             
             sessionsRepository.save(session);
     }
