@@ -60,13 +60,16 @@ public class SessionService {
                 //Una lista de invitados válida no debería incluir al dueño porque se agrega automáticamente
                 throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_OWNER);
             }
+            if (dto.role() == Invitation.Role.DUEÑO) {
+                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_ADDITIONAL_OWNER);
+            }
 
             User user = usersRepository.findById(userEmail).orElseThrow(() -> 
                     new UserNotFoundException(userEmail));
             if (invitedUsers.containsKey(user)) {
                 Invitation.Role firstRole = invitedUsers.get(user).getRole();
                 Invitation.Role secondRole = dto.role();
-                if (firstRole == secondRole) {
+                if (firstRole != secondRole) {
                     //Se invitó al mismo usuario dos veces pero con distintos roles. No se puede decidir qué hacer y es
                     //necesario lanzar una excepción
                     throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE_DIFF_ROLE);
@@ -80,7 +83,7 @@ public class SessionService {
             invitedUsers.put(user, new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE));
         }
 
-        sessionCreateUpdateHelper(newSession, polls, invitedUsers.values(), newSessionDTO);
+        sessionCreateUpdateHelper(newSession, polls, new HashSet<>(invitedUsers.values()), newSessionDTO);
     }
 
     @Transactional
@@ -128,7 +131,7 @@ public class SessionService {
         Set<String> newEmails = new HashSet<>(newInvitedUserEmails);
         newEmails.removeAll(oldInvitedUserEmails);
 
-        ArrayList<Invitation> oldInvitations = new ArrayList<>();
+        /* ArrayList<Invitation> oldInvitations = new ArrayList<>();
         for (Invitation invitation : session.getInvitations()) {
             User user = invitation.getInvitedUser();
             String invitedUserEmail = user.getEmail();
@@ -163,7 +166,7 @@ public class SessionService {
         entireInvitations.addAll(oldInvitations);
         entireInvitations.addAll(newInvitations);
 
-        sessionCreateUpdateHelper(session, polls, entireInvitations, updatedSessionDTO);
+        sessionCreateUpdateHelper(session, polls, entireInvitations, updatedSessionDTO); */
     }
 
     //Para usarlo para crear sesión, pasarle una nueva sesión
@@ -185,7 +188,7 @@ public class SessionService {
             for (TagDTO dto : newSessionDTO.tags()) {
                 //No vamos a permitir agregar dos tags con el mismo texto porque eso los haría idénticos
                 if (tags.containsKey(dto.text())) {
-
+                    
                 }
 
                 SessionTag tag = new SessionTag();
