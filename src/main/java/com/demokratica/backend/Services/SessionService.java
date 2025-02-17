@@ -43,17 +43,20 @@ public class SessionService {
         Session newSession = new Session();
         ArrayList<Poll> polls = new ArrayList<>();
 
-        ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
+        //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
+        //Hacemos esto de primeras para así asegurarnos de que no se pueda invitar dos veces al dueño y con 
+        //un rol posiblemente distinto
+        ArrayList<Invitation> invitedUsers = new ArrayList<>();
+        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
+                    new UserNotFoundException(ownerEmail));
+        invitedUsers.add(new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+        invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
             String userEmail = dto.invitedUserEmail();
             User user = usersRepository.findById(userEmail).orElseThrow(() -> 
                     new UserNotFoundException(userEmail));
 
             return new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE);
         }).collect(Collectors.toCollection(ArrayList::new));
-        //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
-        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
-                    new UserNotFoundException(ownerEmail));
-        invitedUsers.add(new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
 
         sessionCreateUpdateHelper(newSession, polls, invitedUsers, newSessionDTO);
     }

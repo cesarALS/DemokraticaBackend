@@ -1,8 +1,7 @@
 package com.demokratica.backend.Model;
 
 import java.time.LocalDateTime;
-import java.util.List;
-
+import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -38,8 +37,8 @@ public class Poll {
     private LocalDateTime endTime;
 
     @OneToMany(mappedBy =  "poll", cascade = CascadeType.ALL)
-    private List<PollTag> tags;
+    private Set<PollTag> tags;
 
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)
-    private List<PollOption> options;
+    private Set<PollOption> options;
 }

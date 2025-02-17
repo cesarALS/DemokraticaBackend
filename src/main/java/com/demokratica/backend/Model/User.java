@@ -1,6 +1,7 @@
 package com.demokratica.backend.Model;
 
 import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -33,9 +34,9 @@ public class User {
     private Plan plan;
 
     @OneToMany(mappedBy= "invitedUser", cascade = CascadeType.ALL)
-    private List<Invitation> invitations;
+    private Set<Invitation> invitations;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<UserVote> votes;
+    private Set<UserVote> votes;
     
 }
