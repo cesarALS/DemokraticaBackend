@@ -2,13 +2,16 @@ package com.demokratica.backend.Services;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.demokratica.backend.Exceptions.InvalidInvitationsException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
@@ -41,22 +44,41 @@ public class SessionService {
     @Transactional
     public void createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
         Session newSession = new Session();
-        ArrayList<Poll> polls = new ArrayList<>();
+        //TODO: Para evitar duplicados. No sé cómo hacerlo por ahora ni si sea necesario
+        Set<Poll> polls = new HashSet<>();
 
         //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
         //Hacemos esto de primeras para así asegurarnos de que no se pueda invitar dos veces al dueño y con 
         //un rol posiblemente distinto
-        ArrayList<Invitation> invitedUsers = new ArrayList<>();
+        Map<User, Invitation> invitedUsers = new HashMap<>();
         User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
                     new UserNotFoundException(ownerEmail));
-        invitedUsers.add(new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
-        invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
+        invitedUsers.put(owner, new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+        for (InvitationDTO dto : newSessionDTO.invitations()) {
             String userEmail = dto.invitedUserEmail();
+            if (userEmail.equals(ownerEmail)) {
+                //Una lista de invitados válida no debería incluir al dueño porque se agrega automáticamente
+                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_OWNER);
+            }
+
             User user = usersRepository.findById(userEmail).orElseThrow(() -> 
                     new UserNotFoundException(userEmail));
+            if (invitedUsers.containsKey(user)) {
+                Invitation.Role firstRole = invitedUsers.get(user).getRole();
+                Invitation.Role secondRole = dto.role();
+                if (firstRole == secondRole) {
+                    //Se invitó al mismo usuario dos veces pero con distintos roles. No se puede decidir qué hacer y es
+                    //necesario lanzar una excepción
+                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE_DIFF_ROLE);
+                } else {
+                    //Podríamos simplemente ignorar esta invitación duplicada, pero creo que es preferible informarle
+                    //al frontend que la invitación tiene un error
+                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE);
+                }
+            }
 
-            return new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE);
-        }).collect(Collectors.toCollection(ArrayList::new));
+            invitedUsers.put(user, new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE));
+        }
 
         sessionCreateUpdateHelper(newSession, polls, invitedUsers, newSessionDTO);
     }

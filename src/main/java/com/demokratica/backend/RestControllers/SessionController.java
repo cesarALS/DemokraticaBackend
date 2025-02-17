@@ -2,6 +2,7 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demokratica.backend.Exceptions.InvalidInvitationsException;
 import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Security.SecurityConfig;
@@ -50,6 +51,8 @@ public class SessionController {
             sessionService.createSession(userEmail, newSessionDTO);
             return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (UnsupportedAuthenticationException e) {
+            return e.getResponse();
+        } catch (InvalidInvitationsException e) {
             return e.getResponse();
         }
     }
