@@ -57,10 +57,10 @@ public class SessionServiceTest {
      *  a probar y solo asegurarse de que se borren de la BD después de realizar cada prueba
      */
     private String sessionTitle = "Sesión de prueba";
-    private String sessionDescription = "Probando que no deje invitar al mismo más de una vez";
+    private String sessionDescription = "Probando el servicio de sesiones";
     private LocalDateTime startTime = LocalDateTime.now();
     private LocalDateTime endTime = startTime.plusHours(1);
-    private ArrayList<TagDTO> tags = new ArrayList<>(List.of(new TagDTO("Tag de prueba 1"), new TagDTO("tag de prueba 2")));
+    private ArrayList<TagDTO> tags = new ArrayList<>(List.of(new TagDTO("Prueba unitaria"), new TagDTO("Servicio de sesiones")));
     private String ownerEmail = "owner@gmail.com";
     private String invitedUserEmail = "invitedUser@gmail.com";
 
@@ -85,18 +85,48 @@ public class SessionServiceTest {
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
         invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
 
-        NewSessionDTO dto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
-        this.createMockSession(dto);
-
-        sessionService.createSession(ownerEmail, dto);
-
-        Optional<Session> session = sessionsRepository.findById(1L);
-        Assertions.assertThat(session.isPresent());
-        ArrayList<Invitation> savedInvitations = new ArrayList<>(session.get().getInvitations());
-        Assertions.assertThat(savedInvitations.size()).isEqualTo(2);
+        NewSessionDTO dto = this.createMockSession(invitationDTOs);
+        this.validateSavedInvitations(2, dto);
     }
 
-    public void createMockSession(NewSessionDTO newSessionDTO) {
+    @Test
+    @Order(2)
+    @DisplayName("Prueba 2: invitar al mismo usuario con roles distintos")
+    @Rollback(value = true)
+    public void inviteSameUserDifferentRoles() {
+        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.EDITOR, invitedUserEmail));
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.ADMIN, invitedUserEmail));
+
+        this.validateSavedInvitations(2, this.createMockSession(invitationDTOs));
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("Prueba 3: invitar al dueño")
+    @Rollback(value = true)
+    public void inviteOwner() {
+        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, ownerEmail));
+
+        this.validateSavedInvitations(1, this.createMockSession(invitationDTOs));
+    }
+
+    @Test
+    @Order(4)
+    @DisplayName("Prueba 4: invitar a alguien con rol de dueño")
+    @Rollback(value = true)
+    public void inviteWithOwnerRole() {
+        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.DUEÑO, invitedUserEmail));
+
+        //TODO: debería lanzar algún tipo de excepción directamente
+        this.validateSavedInvitations(1, this.createMockSession(invitationDTOs));
+    }
+
+    public NewSessionDTO createMockSession(ArrayList<InvitationDTO> invitationDTOs) {
+        NewSessionDTO newSessionDTO = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
         Session mockSession = new Session();
         mockSession.setTitle(newSessionDTO.title());
         mockSession.setDescription(newSessionDTO.description());
@@ -129,5 +159,16 @@ public class SessionServiceTest {
 
         when(sessionsRepository.save(any(Session.class))).thenReturn(mockSession);
         when(sessionsRepository.findById(1L)).thenReturn(Optional.of(mockSession));
+
+        return newSessionDTO;
+    }
+
+    public void validateSavedInvitations(int expectedValue, NewSessionDTO dto) {
+        sessionService.createSession(ownerEmail, dto);
+
+        Optional<Session> session = sessionsRepository.findById(1L);
+        Assertions.assertThat(session.isPresent());
+        ArrayList<Invitation> savedInvitations = new ArrayList<>(session.get().getInvitations());
+        Assertions.assertThat(savedInvitations.size()).isEqualTo(expectedValue);
     }
 }
