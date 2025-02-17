@@ -26,6 +26,7 @@ import org.springframework.test.annotation.Rollback;
 import com.demokratica.backend.Exceptions.InvalidInvitationsException;
 import com.demokratica.backend.Exceptions.InvalidTagsException;
 import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -75,6 +76,8 @@ public class SessionServiceTest {
         invitedUser.setEmail(invitedUserEmail);
 
         //Para que no haya problemas con la parte del servicio que detecta cuando un usuario no está registrado
+        //TODO: Esto no debería ser necesario e indica que hay clases con excesivas responsabilidades, violando el principio de
+        //Single Responsibility. La excesiva necesidad de usar Mocks demuestra un pobre diseño POO
         when(usersRepository.findById(ownerEmail)).thenReturn(Optional.of(owner));
         when(usersRepository.findById(invitedUserEmail)).thenReturn(Optional.of(invitedUser));
     }
@@ -134,5 +137,30 @@ public class SessionServiceTest {
         tags = new ArrayList<>(List.of(new TagDTO("Tag repetido"), new TagDTO("Tag repetido")));
         NewSessionDTO dto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
         assertThrows(InvalidTagsException.class, () -> sessionService.createSession(ownerEmail, dto));
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("Prueba 6: actualizar una sesión y verificar el resultado")
+    @Rollback(value = true)
+    public void updateSessionTest() {
+        //La idea es crear una primera sesión con un solo invitado (o sea dos participantes) y en la actualización no mandar ninguno
+        //El resultado debería ser una lista con solo 1 participante (el dueño), si está funcionando correctamente
+        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
+
+        NewSessionDTO firstDto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
+        //Si pasó las pruebas anteriores no debería lanzar ninguna excepción aquí
+        Session originalSession = sessionService.createSession(ownerEmail, firstDto);
+        Assertions.assertThat(originalSession.getInvitations().size()).isEqualTo(2);
+
+        when(sessionsRepository.findById(1L)).thenReturn(Optional.of(originalSession));
+
+        //Ahora una lista vacía para la actualización. Solo debería quedar el dueño como invitado
+        invitationDTOs = new ArrayList<>();
+        NewSessionDTO updatedDto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
+        Session updatedSession = sessionService.updateSession(1L, ownerEmail, updatedDto);
+
+        Assertions.assertThat(updatedSession.getInvitations().size()).isEqualTo(1);
     }
 }

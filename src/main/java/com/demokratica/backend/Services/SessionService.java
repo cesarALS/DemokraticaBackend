@@ -43,7 +43,7 @@ public class SessionService {
     }
 
     @Transactional
-    public void createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
+    public Session createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
         Session newSession = new Session();
         //TODO: Para evitar duplicados. No sé cómo hacerlo por ahora ni si sea necesario
         Set<Poll> polls = new HashSet<>();
@@ -84,11 +84,11 @@ public class SessionService {
             invitedUsers.put(user, new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE));
         }
 
-        sessionCreateUpdateHelper(newSession, polls, new HashSet<>(invitedUsers.values()), newSessionDTO);
+        return sessionCreateUpdateHelper(newSession, polls, new HashSet<>(invitedUsers.values()), newSessionDTO);
     }
 
     @Transactional
-    public void updateSession (Long sessionId, String userEmail, NewSessionDTO updatedSessionDTO) {
+    public Session updateSession (Long sessionId, String userEmail, NewSessionDTO updatedSessionDTO) {
         //Primero hay que verificar que el usuario tenga los permisos necesarios para reconfigurar la sesión (DUEÑO solamente, por ahora)
         Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
         role.ifPresent(presentRole -> {
@@ -168,12 +168,12 @@ public class SessionService {
         entireInvitations.addAll(oldInvitations);
         entireInvitations.addAll(newInvitations);
 
-        sessionCreateUpdateHelper(session, polls, new HashSet<>(entireInvitations), updatedSessionDTO); 
+        return sessionCreateUpdateHelper(session, polls, new HashSet<>(entireInvitations), updatedSessionDTO); 
     }
 
     //TODO: agregar soporte para fecha de actualización y fecha de publicación
     @Transactional
-    private void sessionCreateUpdateHelper (Session session, Set<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
+    private Session sessionCreateUpdateHelper (Session session, Set<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
             session.setTitle(newSessionDTO.title());
             session.setDescription(newSessionDTO.description());
             session.setStartTime(newSessionDTO.startTime());
@@ -199,6 +199,7 @@ public class SessionService {
             session.setTags(new HashSet<>(tagsMap.values()));
             
             sessionsRepository.save(session);
+            return session;
     }
     
     public ArrayList<GetSessionsDTO> getSessionsOfUser(String userEmail) {
