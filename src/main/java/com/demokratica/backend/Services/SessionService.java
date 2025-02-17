@@ -80,7 +80,7 @@ public class SessionService {
             invitedUsers.put(user, new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE));
         }
 
-        sessionCreateUpdateHelper(newSession, polls, invitedUsers, newSessionDTO);
+        sessionCreateUpdateHelper(newSession, polls, invitedUsers.values(), newSessionDTO);
     }
 
     @Transactional
@@ -96,7 +96,7 @@ public class SessionService {
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
                                 new RuntimeException("Couldn't find a session with id " + sessionId + " in the database"));
         
-        ArrayList<Poll> polls = new ArrayList<>(session.getPolls());
+        Set<Poll> polls = new HashSet<>(session.getPolls());
 
         /*
          * El objetivo de este código es determinar qué invitaciones son nuevas y cuáles son antiguas y representan una actualización.
@@ -171,23 +171,28 @@ public class SessionService {
     //El usuario de esta función...
     //TODO: agregar soporte para fecha de actualización y fecha de publicación
     @Transactional
-    private void sessionCreateUpdateHelper (Session session, ArrayList<Poll> polls, ArrayList<Invitation> invitedUsers, NewSessionDTO newSessionDTO) {
+    private void sessionCreateUpdateHelper (Session session, Set<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
             session.setTitle(newSessionDTO.title());
             session.setDescription(newSessionDTO.description());
             session.setStartTime(newSessionDTO.startTime());
             session.setEndTime(newSessionDTO.endTime());
     
             session.setPolls(polls);
-            session.setInvitations(invitedUsers);
+            session.setInvitations(invitations);
             
             //NOTA: Esta lógica es independiente de si se está usando la función para crear o para actualizar
-            ArrayList<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
+            Map<String, SessionTag> tags = new HashMap<>();
+            for (TagDTO dto : newSessionDTO.tags()) {
+                //No vamos a permitir agregar dos tags con el mismo texto porque eso los haría idénticos
+                if (tags.containsKey(dto.text())) {
+
+                }
+
                 SessionTag tag = new SessionTag();
                 tag.setTagText(dto.text());
                 tag.setSession(session);
-                return tag;
-            }).collect(Collectors.toCollection(ArrayList::new));
-            session.setTags(tags);
+            }
+            session.setTags(new HashSet<>(tags.values()));
             
             sessionsRepository.save(session);
     }
