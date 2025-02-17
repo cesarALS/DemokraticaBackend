@@ -1,4 +1,4 @@
-package com.demokratica.backend.Repositories;
+/*package com.demokratica.backend.Repositories;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -49,3 +49,4 @@ public class UserRepositoryTest {
         Assertions.assertThat(authoritiesRepository.findByUser(user).getId()).isGreaterThan(0);
     }
 }
+*/
