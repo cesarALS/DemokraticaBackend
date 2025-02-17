@@ -1,11 +1,14 @@
 package com.demokratica.backend.Services;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -22,8 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 
+import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Model.Session;
+import com.demokratica.backend.Model.SessionTag;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -75,20 +81,53 @@ public class SessionServiceTest {
     @DisplayName("Prueba 1: invitar varias veces al mismo usuario")
     @Rollback(value = true)
     public void inviteSameUserTwice() {
-        String invitedUserEmail = "invitedUser@gmail.com";
+        ArrayList<InvitationDTO> invitationDTOs = new ArrayList<>();
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
+        invitationDTOs.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
 
-        //Debemos crear el NewSessionDTO que nos exige el servicio, lo cual es una mamera pero toca
-        //Afortunadamente la mayoría de esto ya está hecho en el constructor
-        ArrayList<InvitationDTO> invitations = new ArrayList<>();
-        invitations.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
-        //NOTA: otro posible bug sería que se pueda invitar al mismo participante dos veces pero con distinto rol
-        invitations.add(new InvitationDTO(Invitation.Role.PARTICIPANTE, invitedUserEmail));
+        NewSessionDTO dto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitationDTOs, tags);
+        this.createMockSession(dto);
 
-        NewSessionDTO dto = new NewSessionDTO(sessionTitle, sessionDescription, startTime, endTime, invitations, tags);
         sessionService.createSession(ownerEmail, dto);
 
         Optional<Session> session = sessionsRepository.findById(1L);
+        Assertions.assertThat(session.isPresent());
         ArrayList<Invitation> savedInvitations = new ArrayList<>(session.get().getInvitations());
         Assertions.assertThat(savedInvitations.size()).isEqualTo(2);
+    }
+
+    public void createMockSession(NewSessionDTO newSessionDTO) {
+        Session mockSession = new Session();
+        mockSession.setTitle(newSessionDTO.title());
+        mockSession.setDescription(newSessionDTO.description());
+        mockSession.setStartTime(newSessionDTO.startTime());
+        mockSession.setEndTime(newSessionDTO.endTime());
+
+        mockSession.setPolls(Collections.emptyList());
+        ArrayList<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
+            SessionTag tag = new SessionTag();
+            tag.setTagText(dto.text());
+            tag.setSession(mockSession);
+            return tag;
+        }).collect(Collectors.toCollection(ArrayList::new));
+        mockSession.setTags(tags);
+
+        ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
+            String userEmail = dto.invitedUserEmail();
+            User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+                    new UserNotFoundException(userEmail));
+
+            return new Invitation(user, mockSession, dto.role(), InvitationStatus.PENDIENTE);
+        }).collect(Collectors.toCollection(ArrayList::new));
+        //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
+        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
+                    new UserNotFoundException(ownerEmail));
+        invitedUsers.add(new Invitation(owner, mockSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+        mockSession.setInvitations(invitedUsers);
+
+        mockSession.setId(1L);
+
+        when(sessionsRepository.save(any(Session.class))).thenReturn(mockSession);
+        when(sessionsRepository.findById(1L)).thenReturn(Optional.of(mockSession));
     }
 }

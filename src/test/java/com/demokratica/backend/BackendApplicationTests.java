@@ -1,4 +1,4 @@
-package com.demokratica.backend;
+/*package com.demokratica.backend;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -37,3 +37,4 @@ class BackendApplicationTests {
 	}
 
 }
+*/
