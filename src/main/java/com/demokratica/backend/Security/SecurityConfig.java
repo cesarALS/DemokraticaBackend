@@ -34,13 +34,11 @@ public class SecurityConfig {
 		http
 		/*
 			TODO: activar la protección contra CSRF y enviar tokens CSRF con cada petición
-			TODO: establecer una configuración completa y funcional y eliminar el resto de maricadas
 		 */
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(HttpMethod.DELETE, "/api/sessions/").permitAll()
-				//TODO: parchar el problema de seguridad que permite hacer pagos sin autenticarse
-				.requestMatchers("/api/auth/login", "/api/auth/signup", "/api/payments/create").permitAll()
+				.requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
 				.anyRequest().authenticated()
 			)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

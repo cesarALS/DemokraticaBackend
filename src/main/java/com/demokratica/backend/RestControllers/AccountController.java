@@ -6,6 +6,7 @@ import com.demokratica.backend.Services.JWTService;
 import com.demokratica.backend.Services.UserService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController
@@ -53,7 +56,7 @@ public class AccountController {
             return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
          
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @DeleteMapping("/api/users/{email}")
@@ -67,7 +70,7 @@ public class AccountController {
         }
 
         userService.deleteUser(email);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @PutMapping("/api/users/{email}/username")
@@ -83,8 +86,7 @@ public class AccountController {
         }
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        //TODO: esta lógica se repite demasiado y habría que abstraerla de alguna forma.
-        //¿Qué tal que me dieran ganas de cambiar la parte del Sout o el código de error que retorna?
+        //Al hacer un cambio de nombre de usuario hay que actualizar el JWT porque de lo contrario dejará de ser válido
         try  {
             String jwtToken = jwtService.buildToken(auth, userService);
             return new ResponseEntity<>(new JWT(jwtToken), HttpStatus.OK);
@@ -105,6 +107,17 @@ public class AccountController {
         response.put("exists", false);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    //Este endpoint se usa para buscar participantes al crear sesiones. Múltiples páginas como Instagram y
+    //Facebook permiten buscar cuáles son sus usuarios activos cuando uno realiza una búsqueda
+    @GetMapping("/api/users")
+    public ResponseEntity<?> returnAllUsers() {
+        List<UserDTO> userDTOs = userService.getAllUsers();
+        return new ResponseEntity<>(userDTOs, HttpStatus.OK);
+    }
+
+    public record UserDTO (String username, String email) {
+    }    
 
     public record EmailDTO (String email) {
 

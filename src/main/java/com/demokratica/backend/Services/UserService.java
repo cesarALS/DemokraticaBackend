@@ -1,5 +1,10 @@
 package com.demokratica.backend.Services;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,6 +21,7 @@ import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Repositories.AuthoritiesRepository;
 import com.demokratica.backend.Repositories.PlansRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
+import com.demokratica.backend.RestControllers.AccountController.UserDTO;
 
 import jakarta.transaction.Transactional;
 
@@ -101,5 +107,14 @@ public class UserService {
 
     public boolean existsById(String email) {
         return userRepository.existsById(email);
+    }
+
+    public List<UserDTO> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        List<UserDTO> userDTOs = users.stream().map(user -> {
+            return new UserDTO(user.getUsername(), user.getEmail());
+        }).collect(Collectors.toList());
+
+        return userDTOs;
     }
 }
