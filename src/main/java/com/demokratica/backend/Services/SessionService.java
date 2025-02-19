@@ -198,8 +198,7 @@ public class SessionService {
             }
             session.setTags(new HashSet<>(tagsMap.values()));
             
-            sessionsRepository.save(session);
-            return session;
+            return sessionsRepository.save(session);
     }
     
     public ArrayList<GetSessionsDTO> getSessionsOfUser(String userEmail) {

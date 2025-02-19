@@ -47,7 +47,7 @@ public class PollService {
     }
 
     @Transactional
-    public void createPoll(NewPollDTO dto, Long sessionId) {
+    public Poll createPoll(NewPollDTO dto, Long sessionId) {
         //TODO: verificar que el usuario que crea la votación en esa sesión tiene rol de dueño
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
             new RuntimeException("Couldn't find session with id " + String.valueOf(sessionId)));
@@ -82,7 +82,7 @@ public class PollService {
             return option;
         }).collect(Collectors.toSet()));
         
-        pollsRepository.save(poll);
+        return pollsRepository.save(poll);
     }
 
     @Transactional

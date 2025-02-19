@@ -3,6 +3,7 @@ package com.demokratica.backend.RestControllers;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
+import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.PollService;
@@ -10,6 +11,9 @@ import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +39,9 @@ public class ActivitiesController {
 
     @PostMapping("/api/sessions/{id}/polls")
     public ResponseEntity<?> createPoll(@PathVariable Long id, @RequestBody NewPollDTO newPollDTO) {
-        pollService.createPoll(newPollDTO, id);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        Poll createdPoll = pollService.createPoll(newPollDTO, id);
+        CreatedPollResponse response = new CreatedPollResponse(createdPoll.getId(), newPollDTO);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     
     @GetMapping("/api/sessions/{id}")
@@ -58,7 +63,7 @@ public class ActivitiesController {
             Long optionId = vote.optionId();
             pollService.voteForOption(poll_id, userEmail, optionId);
 
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (UnsupportedAuthenticationException e) {
             return e.getResponse();
         }
@@ -87,6 +92,37 @@ public class ActivitiesController {
 
     public record VoteDTO(Long optionId) {
 
+    }
+
+    public record PollOptionsResponse (Long id, String description) {
+    }
+
+    public record CreatedPollResponse (Long id, String title, String description, LocalDateTime startTime, 
+                                        LocalDateTime endTime, List<String> tags, List<PollOptionsResponse> pollOptions) {
+        
+        public CreatedPollResponse (Long id, NewPollDTO newPollDTO) {
+            this(id, newPollDTO.title(), newPollDTO.description(), newPollDTO.startTime(), newPollDTO.endTime(), 
+                    getFormattedTags(newPollDTO.tags()), getFormattedPollOptions(newPollDTO.pollOptions()));
+        }
+
+        public static List<String> getFormattedTags(List<TagDTO> tagDTOs) {
+            List<String> tags = tagDTOs.stream().map(dto -> {
+                return dto.text();
+            }).toList();
+
+            return tags;
+        }
+
+        public static List<PollOptionsResponse> getFormattedPollOptions(List<PollOptionDTO> pollOptionDTOs) {
+            List<PollOptionsResponse> response = pollOptionDTOs.stream().map(dto -> {
+                Long id = dto.id();
+                String description = dto.description();
+                return new PollOptionsResponse(id, description);
+            }).toList();
+
+            return response;
+        }
+        
     }
     
 }

@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 
@@ -89,23 +88,16 @@ public class AccountController {
         //Al hacer un cambio de nombre de usuario hay que actualizar el JWT porque de lo contrario dejará de ser válido
         try  {
             String jwtToken = jwtService.buildToken(auth, userService);
-            return new ResponseEntity<>(new JWT(jwtToken), HttpStatus.OK);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("newUsername", usernameChange.newUsername());
+            response.put("jwtToken", jwtToken);
+            
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (UnsupportedAuthenticationException e) {
             return e.getResponse();
         }
         
-    }
-
-    @GetMapping("/api/users")
-    public ResponseEntity<?> emailIsTaken(@RequestBody EmailDTO dto) {
-        Map<String, Boolean> response = new HashMap<>();
-        if (userService.existsById(dto.email())) {
-            response.put("exists", true);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-
-        response.put("exists", false);
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     //Este endpoint se usa para buscar participantes al crear sesiones. Múltiples páginas como Instagram y
@@ -127,9 +119,6 @@ public class AccountController {
     }
 
     public record UsernameChange (String newUsername) {
-    }
-
-    public record JWT (String jwtToken) {
     }
 
     public record ErrorResponse (String error) {
