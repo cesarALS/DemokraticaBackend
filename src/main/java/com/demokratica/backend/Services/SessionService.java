@@ -4,6 +4,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +29,7 @@ import com.demokratica.backend.RestControllers.SessionController.InvitationDTO;
 import com.demokratica.backend.RestControllers.SessionController.NewSessionDTO;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 
+import io.jsonwebtoken.lang.Collections;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -46,7 +48,7 @@ public class SessionService {
     public Session createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
         Session newSession = new Session();
         //TODO: Para evitar duplicados. No sé cómo hacerlo por ahora ni si sea necesario
-        Set<Poll> polls = new HashSet<>();
+        List<Poll> polls = Collections.emptyList();
 
         //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
         //Hacemos esto de primeras para así asegurarnos de que no se pueda invitar dos veces al dueño y con 
@@ -100,7 +102,7 @@ public class SessionService {
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
                                 new RuntimeException("Couldn't find a session with id " + sessionId + " in the database"));
         
-        Set<Poll> polls = new HashSet<>(session.getPolls());
+        List<Poll> polls = session.getPolls();
 
         /*
          * El objetivo de este código es determinar qué invitaciones son nuevas y cuáles son antiguas y representan una actualización.
@@ -173,7 +175,7 @@ public class SessionService {
 
     //TODO: agregar soporte para fecha de actualización y fecha de publicación
     @Transactional
-    private Session sessionCreateUpdateHelper (Session session, Set<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
+    private Session sessionCreateUpdateHelper (Session session, List<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
             session.setTitle(newSessionDTO.title());
             session.setDescription(newSessionDTO.description());
             session.setStartTime(newSessionDTO.startTime());
