@@ -2,13 +2,17 @@ package com.demokratica.backend.Services;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.demokratica.backend.Exceptions.InvalidInvitationsException;
+import com.demokratica.backend.Exceptions.InvalidTagsException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
@@ -39,39 +43,64 @@ public class SessionService {
     }
 
     @Transactional
-    public void createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
+    public Session createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
         Session newSession = new Session();
-        ArrayList<Poll> polls = new ArrayList<>();
+        //TODO: Para evitar duplicados. No sé cómo hacerlo por ahora ni si sea necesario
+        Set<Poll> polls = new HashSet<>();
 
-        ArrayList<Invitation> invitedUsers = newSessionDTO.invitations().stream().map(dto -> {
-            String userEmail = dto.invitedUserEmail();
-            User user = usersRepository.findById(userEmail).orElseThrow(() -> 
-                    new UserNotFoundException(userEmail));
-
-            return new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE);
-        }).collect(Collectors.toCollection(ArrayList::new));
         //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
+        //Hacemos esto de primeras para así asegurarnos de que no se pueda invitar dos veces al dueño y con 
+        //un rol posiblemente distinto
+        Map<User, Invitation> invitedUsers = new HashMap<>();
         User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
                     new UserNotFoundException(ownerEmail));
-        invitedUsers.add(new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+        invitedUsers.put(owner, new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+        for (InvitationDTO dto : newSessionDTO.invitations()) {
+            String userEmail = dto.invitedUserEmail();
+            if (userEmail.equals(ownerEmail)) {
+                //Una lista de invitados válida no debería incluir al dueño porque se agrega automáticamente
+                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_OWNER);
+            }
+            if (dto.role() == Invitation.Role.DUEÑO) {
+                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_ADDITIONAL_OWNER);
+            }
 
-        sessionCreateUpdateHelper(newSession, polls, invitedUsers, newSessionDTO);
+            User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+                    new UserNotFoundException(userEmail));
+            if (invitedUsers.containsKey(user)) {
+                Invitation.Role firstRole = invitedUsers.get(user).getRole();
+                Invitation.Role secondRole = dto.role();
+                if (firstRole != secondRole) {
+                    //Se invitó al mismo usuario dos veces pero con distintos roles. No se puede decidir qué hacer y es
+                    //necesario lanzar una excepción
+                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE_DIFF_ROLE);
+                } else {
+                    //Podríamos simplemente ignorar esta invitación duplicada, pero creo que es preferible informarle
+                    //al frontend que la invitación tiene un error
+                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE);
+                }
+            }
+
+            invitedUsers.put(user, new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE));
+        }
+
+        return sessionCreateUpdateHelper(newSession, polls, new HashSet<>(invitedUsers.values()), newSessionDTO);
     }
 
     @Transactional
-    public void updateSession (Long sessionId, String userEmail, NewSessionDTO updatedSessionDTO) {
+    public Session updateSession (Long sessionId, String userEmail, NewSessionDTO updatedSessionDTO) {
         //Primero hay que verificar que el usuario tenga los permisos necesarios para reconfigurar la sesión (DUEÑO solamente, por ahora)
         Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
         role.ifPresent(presentRole -> {
             if (presentRole != Invitation.Role.DUEÑO) {
-                throw new RuntimeException("User with email " + userEmail + " isn't admin of the session he is trying to update");    
+                throw new RuntimeException("User with email " + userEmail + " isn't owner of the session he is trying to update");    
             }
         });
 
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
                                 new RuntimeException("Couldn't find a session with id " + sessionId + " in the database"));
         
-        ArrayList<Poll> polls = new ArrayList<>(session.getPolls());
+        Set<Poll> polls = new HashSet<>(session.getPolls());
 
         /*
          * El objetivo de este código es determinar qué invitaciones son nuevas y cuáles son antiguas y representan una actualización.
@@ -108,6 +137,7 @@ public class SessionService {
             User user = invitation.getInvitedUser();
             String invitedUserEmail = user.getEmail();
             if (commonEmails.contains(invitedUserEmail)) {
+                //Si el usuario ya había aceptado la invitación debemos preservar esto en la sesión actualizada
                 Invitation.InvitationStatus status = invitation.getStatus();
                 //Valor previo a la actualización
                 Invitation.Role newRole = invitation.getRole();
@@ -138,33 +168,37 @@ public class SessionService {
         entireInvitations.addAll(oldInvitations);
         entireInvitations.addAll(newInvitations);
 
-        sessionCreateUpdateHelper(session, polls, entireInvitations, updatedSessionDTO);
+        return sessionCreateUpdateHelper(session, polls, new HashSet<>(entireInvitations), updatedSessionDTO); 
     }
 
-    //Para usarlo para crear sesión, pasarle una nueva sesión
-    //Para usarlo para actualizar una sesión, pasarle la sesión a actualizar
-    //El usuario de esta función...
     //TODO: agregar soporte para fecha de actualización y fecha de publicación
     @Transactional
-    private void sessionCreateUpdateHelper (Session session, ArrayList<Poll> polls, ArrayList<Invitation> invitedUsers, NewSessionDTO newSessionDTO) {
+    private Session sessionCreateUpdateHelper (Session session, Set<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
             session.setTitle(newSessionDTO.title());
             session.setDescription(newSessionDTO.description());
             session.setStartTime(newSessionDTO.startTime());
             session.setEndTime(newSessionDTO.endTime());
     
             session.setPolls(polls);
-            session.setInvitations(invitedUsers);
+            session.setInvitations(invitations);
             
             //NOTA: Esta lógica es independiente de si se está usando la función para crear o para actualizar
-            ArrayList<SessionTag> tags = newSessionDTO.tags().stream().map(dto -> {
+            //Queremos evitar que se agreguen dos tags idénticos (mismo texto). Para eso está esta este HashMap y esta lógica
+            Map<String, SessionTag> tagsMap = new HashMap<>();
+            for (TagDTO dto : newSessionDTO.tags()) {
+                if (tagsMap.containsKey(dto.text())) {
+                    throw new InvalidTagsException();                    
+                }
+
                 SessionTag tag = new SessionTag();
                 tag.setTagText(dto.text());
                 tag.setSession(session);
-                return tag;
-            }).collect(Collectors.toCollection(ArrayList::new));
-            session.setTags(tags);
+
+                tagsMap.put(dto.text(), tag);
+            }
+            session.setTags(new HashSet<>(tagsMap.values()));
             
-            sessionsRepository.save(session);
+            return sessionsRepository.save(session);
     }
     
     public ArrayList<GetSessionsDTO> getSessionsOfUser(String userEmail) {

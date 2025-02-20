@@ -1,5 +1,7 @@
 package com.demokratica.backend.Model;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -46,5 +48,21 @@ public class Invitation {
         this.session = session;
         this.role = role;
         this.status = status;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || o.getClass() != getClass()) return false;
+        Invitation that = (Invitation) o;
+        return (that.getInvitedUser().getEmail().equals(this.getInvitedUser().getEmail())) &&
+               (that.getSession().getId() == this.getSession().getId()) &&
+               (that.getRole() == this.getRole()) &&
+               (that.getStatus() == this.getStatus());
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.invitedUser.getEmail(), this.session.getId(), this.role, this.status);
     }
 }

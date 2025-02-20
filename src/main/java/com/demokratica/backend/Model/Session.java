@@ -1,7 +1,7 @@
 package com.demokratica.backend.Model;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -30,9 +30,9 @@ public class Session {
     private LocalDateTime endTime;
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
-    private List<SessionTag> tags;
+    private Set<SessionTag> tags;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
-    private List<Invitation> invitations;
+    private Set<Invitation> invitations;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
-    private List<Poll> polls;
+    private Set<Poll> polls;
 }
