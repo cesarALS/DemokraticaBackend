@@ -70,7 +70,7 @@ public class PollService {
             tag.setPoll(poll);
 
             return tag;
-        }).collect(Collectors.toSet()));
+        }).collect(Collectors.toList()));
 
         poll.setOptions(dto.pollOptions().stream().map(optionDto -> {
             PollOption option = new PollOption();
@@ -80,7 +80,7 @@ public class PollService {
             option.setPoll(poll);
 
             return option;
-        }).collect(Collectors.toSet()));
+        }).collect(Collectors.toList()));
         
         return pollsRepository.save(poll);
     }
