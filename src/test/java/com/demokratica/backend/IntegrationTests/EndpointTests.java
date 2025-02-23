@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThrows;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,9 @@ import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Model.UserVote;
+import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Model.Invitation.Role;
+import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.PollOptionsRepository;
 import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -97,6 +100,8 @@ public class EndpointTests {
     PollsRepository pollsRepository;
     @Autowired
     UserVoteRepository userVoteRepository;
+    @Autowired
+    InvitationsRepository invitationsRepository;
 
     @Autowired
     WebTestClient webTestClient;
@@ -207,6 +212,17 @@ public class EndpointTests {
                 .uri("/api/polls/" + String.valueOf(pollId))
                 .header("Authorization", "Bearer " + jwtToken)
                 .bodyValue(new VoteDTO(pollOptionId))
+                .exchange();
+
+        return spec;
+    }
+
+    public ResponseSpec acceptInvitationHelper (int userNumber, int sessionId) {
+        String jwtToken = login(getUserEmail(userNumber));
+
+        ResponseSpec spec = webTestClient.post()
+                .uri("/api/sessions/" + String.valueOf(sessionId) + "/invitations/accept")
+                .header("Authorization", "Bearer " + jwtToken)
                 .exchange();
 
         return spec;
@@ -681,12 +697,68 @@ public class EndpointTests {
         }
     }
 
+    @Test
+    @DisplayName("Prueba 29: aceptar invitación en sesión inexistente")
+    @Order(29)
+    @Rollback(true)
+    public void acceptInvitationToInexistentSession() {
+        //La sesión 4 no existe
+        acceptInvitationHelper(1, 4).expectStatus().isForbidden();
+    }
+
+    @Test
+    @DisplayName("Prueba 30: aceptar invitación en sesión a la que no ha sido invitado")
+    @Order(30)
+    @Rollback(true)
+    public void acceptInvitationToUninvitedSession() {
+        //El primer usuario no fue invitado a la segunda sesión.
+        acceptInvitationHelper(1, 2).expectStatus().isForbidden();
+    }
+
+    @Test
+    @DisplayName("Prueba 31: aceptar invitación ya previamente aceptada")
+    @Order(31)
+    @Rollback(true)
+    public void acceptAlreadyAcceptedInvitation() {
+        //Aceptamos dos veces la invitación a la sesión con id 3
+        acceptInvitationHelper(1, 3).expectStatus().isNoContent();
+        //El expectStatus parece no tener soporte para el código http Conflict así que 
+        //toca poner el número 409 directamente
+        acceptInvitationHelper(1, 3).expectStatus().isEqualTo(409);
+
+        //Tratamos de aceptar la invitación a la sesión 1, ya automáticamente aceptada porque el usuario 1
+        //es quien creó la sesión 1
+        acceptInvitationHelper(1, 1).expectStatus().isEqualTo(409);
+    }
+
+    @Test
+    //Un caso normal es que exista la sesión, el usuario haya sido invitado y la
+    //solicitud siga pendiente
+    @DisplayName("Prueba 32: aceptar invitación en casos normales")
+    @Order(32)
+    @Rollback(true)
+    @Transactional
+    public void acceptInvitationUsualCase() {
+        for (int userNumber = 1; userNumber <= 3; userNumber++) {
+            //El usuario 1 fue invitado a la sesión 3, el 2 a la sesión 1, el 3 a la sesión 2
+            int invitedSessionId = (userNumber == 1) ? 3 : userNumber - 1;
+            acceptInvitationHelper(userNumber, invitedSessionId).expectStatus().isNoContent();
+
+            Optional<InvitationStatus> status = invitationsRepository
+                .findInvitationStatusByEmailAndSessionId(getUserEmail(userNumber), Long.valueOf(invitedSessionId));
+
+            Assertions.assertThat(status.isPresent()).isTrue();
+            Assertions.assertThat(status.get()).isEqualTo(InvitationStatus.ACEPTADO);
+        }
+    }
+
     //No he añadido pruebas para hacer las mismas validaciones que se deben hacer
     //en las sesiones (tags repetidos, fechas inválidas, campos nulos, etc.)
     //No las hago porque debería primero buscar una manera más elegante para aplicar 
     //la misma validación de las sesiones en las votaciones comunes
 
     //Probar que no se pueda votar después de terminada la actividad
+    //Hacer los casos de prueba necesarios para el caso de uso "borrar una votación"
 
     //También falta probar que no se pueda interactuar con una sesión de ninguna forma
     //sin antes haber aceptado la invitación

@@ -80,6 +80,18 @@ public class ActivitiesController {
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @PostMapping("/api/sessions/{id}/invitations/accept")
+    public ResponseEntity<?> acceptInvitation() {
+        //Se podría implementar idempotencia para que el resultado de aceptar dos veces la
+        //misma invitación no cause ningún error, en lugar de devolver 409 CONFLICT
+        //TODO: los posibles códigos http a usar son: 204 NO_CONTENT en caso de éxito, 403 FORBIDDEN (para no filtrar info)
+        //en caso de que o no exista la sesión o no exista la invitación, 
+        //ChatGPT sugirió 409 CONFLICT para aceptar invitaciones previamente aceptadas
+        
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    
     
     public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
     }
