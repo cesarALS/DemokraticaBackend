@@ -37,7 +37,6 @@ import com.demokratica.backend.Model.UserVote;
 import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Model.Invitation.Role;
 import com.demokratica.backend.Repositories.InvitationsRepository;
-import com.demokratica.backend.Repositories.PollOptionsRepository;
 import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.Repositories.UserVoteRepository;

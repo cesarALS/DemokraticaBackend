@@ -29,14 +29,9 @@ public class JWTService {
     //Por ahora que la autenticación es solo con correo y contraseña la lógica es más sencilla, pero cuando también pueda ser por
     //OAuth se volverá más compleja
     public String buildToken(Authentication authentication, UserService userService) throws UnsupportedAuthenticationException {
-        try {
-            String email = SecurityConfig.getUsernameFromAuthentication();
-            String username = userService.getUsername(email);
-            return internalBuildToken(email, username);
-        } catch (UnsupportedAuthenticationException e) {
-            System.out.println(e.getMessage());
-            throw e;
-        }
+        String email = SecurityConfig.getUsernameFromAuthentication();
+        String username = userService.getUsername(email);
+        return internalBuildToken(email, username);
     }
 
     //TODO: volverlo este método private y hacer el testing con el método buildToken

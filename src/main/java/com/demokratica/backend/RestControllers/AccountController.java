@@ -1,6 +1,5 @@
 package com.demokratica.backend.RestControllers;
 
-import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Services.JWTService;
 import com.demokratica.backend.Services.UserService;
@@ -86,18 +85,14 @@ public class AccountController {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         //Al hacer un cambio de nombre de usuario hay que actualizar el JWT porque de lo contrario dejará de ser válido
-        try  {
-            String jwtToken = jwtService.buildToken(auth, userService);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("newUsername", usernameChange.newUsername());
-            response.put("jwtToken", jwtToken);
-            
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
         
+        String jwtToken = jwtService.buildToken(auth, userService);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("newUsername", usernameChange.newUsername());
+        response.put("jwtToken", jwtToken);
+        
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     //Este endpoint se usa para buscar participantes al crear sesiones. Múltiples páginas como Instagram y

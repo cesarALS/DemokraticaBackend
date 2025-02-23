@@ -2,8 +2,6 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.demokratica.backend.Exceptions.InvalidInvitationsException;
-import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Security.SecurityConfig;
@@ -24,9 +22,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 
 
-
-
-
 @RestController
 public class SessionController {
     
@@ -36,42 +31,26 @@ public class SessionController {
     }
 
     @GetMapping("/api/sessions")
-    public ResponseEntity<?> returnAllUserSessions() {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            ArrayList<GetSessionsDTO> getSessionsResponse = sessionService.getSessionsOfUser(userEmail);
-            return new ResponseEntity<>(getSessionsResponse, HttpStatus.OK);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
+    public ResponseEntity<?> returnAllUserSessions() {        
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        ArrayList<GetSessionsDTO> getSessionsResponse = sessionService.getSessionsOfUser(userEmail);
+        return new ResponseEntity<>(getSessionsResponse, HttpStatus.OK);
     }
 
     @PostMapping("/api/sessions")
     public ResponseEntity<?> createNewSession(@RequestBody NewSessionDTO newSessionDTO) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            Session createdSession = sessionService.createSession(userEmail, newSessionDTO);
-            NewSessionResponse response = new NewSessionResponse(createdSession.getId(), newSessionDTO);
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        } catch (InvalidInvitationsException e) {
-            return e.getResponse();
-        }
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        Session createdSession = sessionService.createSession(userEmail, newSessionDTO);
+        NewSessionResponse response = new NewSessionResponse(createdSession.getId(), newSessionDTO);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("api/sessions/{id}")
     public ResponseEntity<?> updateSession(@PathVariable Long id, @RequestBody NewSessionDTO dto) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            Session updatedSession = sessionService.updateSession(id, userEmail, dto);
-            NewSessionResponse response = new NewSessionResponse(updatedSession.getId(), dto);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        Session updatedSession = sessionService.updateSession(id, userEmail, dto);
+        NewSessionResponse response = new NewSessionResponse(updatedSession.getId(), dto);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
     
     //Retornar 204 (No Content) si se borró exitosamente, 403 (Forbidden) en caso de que no tenga autorización o el recurso no exista
@@ -79,16 +58,9 @@ public class SessionController {
     //existentes
     @DeleteMapping("/api/sessions/{id}")
     public ResponseEntity<?> deleteSession(@PathVariable Long id) {
-        //Obtenemos el ID del usuario (correo) a partir de su autenticación, para así evitar que borre sesiones de otros usuarios
-        //Podemos asumir que el usuario tiene una autenticación porque este endpoint está protegido por Spring Security
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            sessionService.deleteById(userEmail, id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
-        
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        sessionService.deleteById(userEmail, id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
     public record NewSessionDTO (String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<InvitationDTO> invitations, ArrayList<TagDTO> tags) {

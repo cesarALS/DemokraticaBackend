@@ -2,7 +2,6 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.PollTag;
@@ -46,37 +45,25 @@ public class ActivitiesController {
     
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id, userEmail));
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id, userEmail));
 
-            return new ResponseEntity<>(userPolls, HttpStatus.OK);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
+        return new ResponseEntity<>(userPolls, HttpStatus.OK);
     }
 
     @PostMapping("/api/polls/{poll_id}")
     public ResponseEntity<?> voteForAnOption(@PathVariable Long poll_id, @RequestBody VoteDTO vote) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            Long optionId = vote.optionId();
-            pollService.voteForOption(poll_id, userEmail, optionId);
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        Long optionId = vote.optionId();
+        pollService.voteForOption(poll_id, userEmail, optionId);
 
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @DeleteMapping("/api/polls/{poll_id}")
     public ResponseEntity<?> deletePoll (@PathVariable Long poll_id) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            pollService.deletePoll(userEmail, poll_id);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        pollService.deletePoll(userEmail, poll_id);
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
