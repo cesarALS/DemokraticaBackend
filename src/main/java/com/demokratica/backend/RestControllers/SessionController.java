@@ -69,6 +69,8 @@ public class SessionController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (UnsupportedAuthenticationException e) {
             return e.getResponse();
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
     

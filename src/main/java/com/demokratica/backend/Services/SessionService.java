@@ -98,6 +98,9 @@ public class SessionService {
                 throw new RuntimeException("User with email " + userEmail + " isn't owner of the session he is trying to update");    
             }
         });
+        if (role.isEmpty()) {
+            throw new RuntimeException("User with email " + userEmail + " wasn't invited to the session he is trying to update");
+        }
 
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
                                 new RuntimeException("Couldn't find a session with id " + sessionId + " in the database"));
