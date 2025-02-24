@@ -8,12 +8,16 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.PollTag;
+import com.demokratica.backend.Exceptions.InvitationNotFoundException;
+import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Placeholder;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Model.UserVote;
+import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.PollOptionsRepository;
 import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -34,16 +38,18 @@ public class PollService {
     private UsersRepository usersRepository;
     private UserVoteRepository userVoteRepository;
     private PollOptionsRepository pollOptionsRepository;
+    private InvitationsRepository invitationsRepository;
 
     public PollService (SessionsRepository sessionsRepository, PollsRepository pollsRepository,
                         UsersRepository usersRepository, UserVoteRepository userVoteRepository,
-                        PollOptionsRepository pollOptionsRepository) {
+                        PollOptionsRepository pollOptionsRepository, InvitationsRepository invitationsRepository) {
         
         this.sessionsRepository = sessionsRepository;
         this.pollsRepository = pollsRepository;
         this.usersRepository = usersRepository;
         this.pollOptionsRepository = pollOptionsRepository;
         this.userVoteRepository = userVoteRepository;                 
+        this.invitationsRepository = invitationsRepository;
     }
 
     @Transactional
@@ -54,12 +60,9 @@ public class PollService {
 
         Poll poll = new Poll();
         poll.setSession(session);
-
-        String title = dto.title();
-        String description = dto.description();
         
-        poll.setTitle(title);
-        poll.setDescription(description);
+        poll.setTitle(dto.title());
+        poll.setDescription(dto.description());
         poll.setStartTime(dto.startTime());
         poll.setEndTime(dto.endTime());
         
@@ -87,12 +90,11 @@ public class PollService {
 
     @Transactional
     public ArrayList<PollDTO> getSessionPolls (Long sessionId, String userEmail) {
-        //TODO: asegurarse de que el usuario que trata de acceder a la sesión sí ha sido invitado a esa sesión
-        //User user = usersRepository.findById(userEmail).orElseThrow(() -> 
-          //  new RuntimeException("Couldn't find user with email " + userEmail + "in the database"));
+        invitationsRepository.findInvitationByUserAndSessionId(userEmail, sessionId)
+                .orElseThrow(() -> new InvitationNotFoundException(userEmail, sessionId));
 
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
-            new RuntimeException("Couldn't find session with session id " + sessionId));
+            new SessionNotFoundException(sessionId));
 
         ArrayList<PollDTO> polls = session.getPolls().stream().map(poll -> {
             Long pollId = poll.getId();
@@ -105,16 +107,9 @@ public class PollService {
                 return new TagDTO(tag.getTagText());
             }).collect(Collectors.toCollection(ArrayList::new));
 
-            ArrayList<PollOptionDTO> pollOptions = poll.getOptions().stream().map(option -> {
-                
-                String description = option.getDescription();
-                ArrayList<VoterDTO> voters = option.getVotes().stream().map(vote -> {
-                    return new VoterDTO(vote.getUser().getEmail());
-                }).collect(Collectors.toCollection(ArrayList::new));
-                Long id = option.getId();
-
-                return new PollOptionDTO(id, description, voters);
-            }).collect(Collectors.toCollection(ArrayList::new));
+            ArrayList<PollResultDTO> pollResults;
+            poll.getOptions()
+            for ()
 
             return new PollDTO(pollId, pollTitle, pollDescription, startTime, endTime, tags, pollOptions);
         }).collect(Collectors.toCollection(ArrayList::new));
@@ -180,7 +175,13 @@ public class PollService {
         userVoteRepository.save(vote);
     }
 
-    public record PollDTO (Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
+    public record PollDTO (Long id, Placeholder.ActivityType type, Placeholder.EventStatus activityStatus, 
+                            boolean alreadyParticipated, String title, String description, 
+                            LocalDateTime startTime, LocalDateTime endTime, 
+                            ArrayList<TagDTO> tags, ArrayList<PollResultDTO> pollResults) {
+    }
+
+    public record PollResultDTO (Long id, String description, int numVotes) {
     }
 
 }

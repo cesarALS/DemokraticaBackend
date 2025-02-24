@@ -2,12 +2,15 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Placeholder;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.PollTag;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.PollService;
+import com.demokratica.backend.Services.SessionService;
 import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
@@ -32,8 +35,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ActivitiesController {
     
     private PollService pollService;
-    public ActivitiesController (PollService pollService) {
+    private SessionService sessionService;
+    public ActivitiesController (PollService pollService, SessionService sessionService) {
         this.pollService = pollService;
+        this.sessionService = sessionService;
     }
 
     @PostMapping("/api/sessions/{id}/polls")
@@ -47,8 +52,10 @@ public class ActivitiesController {
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
         ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id, userEmail));
+        Invitation.Role userRole = sessionService.getUserRoleFromEmail(userEmail, id);
+        GetActivitiesDTO response = new GetActivitiesDTO(id, userRole, userPolls);
 
-        return new ResponseEntity<>(userPolls, HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/api/polls/{poll_id}")
@@ -123,6 +130,9 @@ public class ActivitiesController {
             return response;
         }
         
+    }
+
+    public record GetActivitiesDTO(Long sessionId, Invitation.Role userRole, ArrayList<PollDTO> pollDTOs) {
     }
     
 }
