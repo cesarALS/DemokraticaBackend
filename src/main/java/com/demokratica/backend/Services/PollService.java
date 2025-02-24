@@ -24,8 +24,6 @@ import com.demokratica.backend.Repositories.SessionsRepository;
 import com.demokratica.backend.Repositories.UserVoteRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
 import com.demokratica.backend.RestControllers.ActivitiesController.NewPollDTO;
-import com.demokratica.backend.RestControllers.ActivitiesController.PollOptionDTO;
-import com.demokratica.backend.RestControllers.ActivitiesController.VoterDTO;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 
 import jakarta.transaction.Transactional;
@@ -107,11 +105,20 @@ public class PollService {
                 return new TagDTO(tag.getTagText());
             }).collect(Collectors.toCollection(ArrayList::new));
 
-            ArrayList<PollResultDTO> pollResults;
-            poll.getOptions()
-            for ()
+            ArrayList<PollResultDTO> pollResults = pollsRepository.getPollResults(pollId);
+            Long totalVotes = pollResults.stream().mapToLong(PollResultDTO::numVotes).sum();
+            Long nonVoters = pollsRepository.getTotalInvitedUsers(sessionId) - totalVotes;
+            pollResults.add(new PollResultDTO(null, null, nonVoters));
+            
+            boolean alreadyParticipated = false;
+            if (pollsRepository.findUserVoteByUserAndSession(userEmail, sessionId).isPresent()) {
+                alreadyParticipated = true;
+            }
 
-            return new PollDTO(pollId, pollTitle, pollDescription, startTime, endTime, tags, pollOptions);
+            return new PollDTO(pollId, Placeholder.ActivityType.POLL, 
+                                Placeholder.getEventStatus(startTime, endTime), alreadyParticipated, 
+                                pollTitle, pollDescription, startTime, endTime, tags, pollResults);
+
         }).collect(Collectors.toCollection(ArrayList::new));
 
         return polls;
@@ -181,7 +188,7 @@ public class PollService {
                             ArrayList<TagDTO> tags, ArrayList<PollResultDTO> pollResults) {
     }
 
-    public record PollResultDTO (Long id, String description, int numVotes) {
+    public record PollResultDTO (Long id, String description, Long numVotes) {
     }
 
 }

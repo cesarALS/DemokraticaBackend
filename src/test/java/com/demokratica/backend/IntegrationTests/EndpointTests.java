@@ -25,6 +25,7 @@ import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec;
 
 import com.demokratica.backend.Exceptions.InvalidInvitationsException;
 import com.demokratica.backend.Exceptions.InvalidTagsException;
+import com.demokratica.backend.Exceptions.InvalidTimesException;
 import com.demokratica.backend.Exceptions.PollNotFoundException;
 import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
@@ -368,7 +369,7 @@ public class EndpointTests {
                 .setStartTime(startTime)
                 .setEndTime(endTime)
                 .build();
-        assertThrows(Exception.class, () -> 
+        assertThrows(InvalidTimesException.class, () -> 
             sessionController.createNewSession(firstDTO));
         
         //La sesión inicia y termina antes del periodo actual
