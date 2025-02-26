@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Exceptions.InvalidInvitationsException;
 import com.demokratica.backend.Exceptions.InvalidTagsException;
+import com.demokratica.backend.Exceptions.RoleNotFoundException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
@@ -98,6 +99,9 @@ public class SessionService {
                 throw new RuntimeException("User with email " + userEmail + " isn't owner of the session he is trying to update");    
             }
         });
+        if (role.isEmpty()) {
+            throw new RuntimeException("User with email " + userEmail + " wasn't invited to the session he is trying to update");
+        }
 
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
                                 new RuntimeException("Couldn't find a session with id " + sessionId + " in the database"));
@@ -238,6 +242,13 @@ public class SessionService {
             //Devolvemos lo mismo en ambos casos para que no se puede inferir qué sesiones existen y cuáles no.
             throw new RuntimeException("The user with email " + userEmail + " either wasn't invited to this session, he isn't the owner or the session doesn't exist");
         }
+    }
+
+    public Invitation.Role getUserRoleFromEmail(String email, long sessionId) {
+        Invitation.Role userRole = invitationsRepository.findRoleByUserAndSessionId(email, sessionId)
+                    .orElseThrow(() -> new RoleNotFoundException(email, sessionId));
+
+        return userRole;
     }
 
     public record GetSessionsDTO (Long id, String title, String description, String creationDate, int noParticipants, int noActivities, boolean isHost, ArrayList<TagDTO> tags) {

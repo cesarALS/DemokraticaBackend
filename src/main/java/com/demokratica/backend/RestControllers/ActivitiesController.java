@@ -2,20 +2,20 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
+import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Placeholder;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.PollTag;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.PollService;
+import com.demokratica.backend.Services.SessionService;
 import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +35,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ActivitiesController {
     
     private PollService pollService;
-    public ActivitiesController (PollService pollService) {
+    private SessionService sessionService;
+    public ActivitiesController (PollService pollService, SessionService sessionService) {
         this.pollService = pollService;
+        this.sessionService = sessionService;
     }
 
     @PostMapping("/api/sessions/{id}/polls")
@@ -48,40 +50,42 @@ public class ActivitiesController {
     
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id, userEmail));
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id, userEmail));
+        Invitation.Role userRole = sessionService.getUserRoleFromEmail(userEmail, id);
+        GetActivitiesDTO response = new GetActivitiesDTO(id, userRole, userPolls);
 
-            return new ResponseEntity<>(userPolls, HttpStatus.OK);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/api/polls/{poll_id}")
     public ResponseEntity<?> voteForAnOption(@PathVariable Long poll_id, @RequestBody VoteDTO vote) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            Long optionId = vote.optionId();
-            pollService.voteForOption(poll_id, userEmail, optionId);
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        Long optionId = vote.optionId();
+        pollService.voteForOption(poll_id, userEmail, optionId);
 
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @DeleteMapping("/api/polls/{poll_id}")
     public ResponseEntity<?> deletePoll (@PathVariable Long poll_id) {
-        try {
-            String userEmail = SecurityConfig.getUsernameFromAuthentication();
-            pollService.deletePoll(userEmail, poll_id);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        pollService.deletePoll(userEmail, poll_id);
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @PostMapping("/api/sessions/{id}/invitations/accept")
+    public ResponseEntity<?> acceptInvitation() {
+        //Se podría implementar idempotencia para que el resultado de aceptar dos veces la
+        //misma invitación no cause ningún error, en lugar de devolver 409 CONFLICT
+        //TODO: los posibles códigos http a usar son: 204 NO_CONTENT en caso de éxito, 403 FORBIDDEN (para no filtrar info)
+        //en caso de que o no exista la sesión o no exista la invitación, 
+        //ChatGPT sugirió 409 CONFLICT para aceptar invitaciones previamente aceptadas
+        
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    
     
     public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
     }
@@ -126,6 +130,9 @@ public class ActivitiesController {
             return response;
         }
         
+    }
+
+    public record GetActivitiesDTO(Long sessionId, Invitation.Role userRole, ArrayList<PollDTO> pollDTOs) {
     }
     
 }

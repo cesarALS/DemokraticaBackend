@@ -23,7 +23,7 @@ public class InvalidInvitationsException extends RuntimeException {
         return "Invalid invitation list: " + message.get(this.errorType);
     }
 
-    public ResponseEntity<?> getResponse() {
+    public ResponseEntity<String> getResponse() {
         System.out.println(this.getMessage());
         return new ResponseEntity<>(this.getMessage(), HttpStatus.BAD_REQUEST);
     }

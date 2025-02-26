@@ -1,6 +1,5 @@
 package com.demokratica.backend.RestControllers;
 
-import com.demokratica.backend.Exceptions.UnsupportedAuthenticationException;
 import com.demokratica.backend.Services.JWTService;
 import com.demokratica.backend.Services.UserService;
 
@@ -42,14 +41,9 @@ public class LoginController {
         String username = userService.getUsername(email);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        try {
-            String jwtToken = jwtService.buildToken(authentication, userService);
-            LoginResponse response = new LoginResponse(username, email, jwtToken);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (UnsupportedAuthenticationException e) {
-            return e.getResponse();
-        }
-        
+        String jwtToken = jwtService.buildToken(authentication, userService);
+        LoginResponse response = new LoginResponse(username, email, jwtToken);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
     
     public record LoginRequest(String email, String password) {

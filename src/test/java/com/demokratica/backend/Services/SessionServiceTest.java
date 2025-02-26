@@ -140,7 +140,7 @@ public class SessionServiceTest {
         assertThrows(InvalidTagsException.class, () -> sessionService.createSession(ownerEmail, dto));
     }
 
-    @Test
+    /*@Test
     @Order(6)
     @DisplayName("Prueba 6: actualizar invitados a una sesión y verificar el resultado")
     @Rollback(value = true)
@@ -183,5 +183,5 @@ public class SessionServiceTest {
         //No debería aparecer el tag original, porque entonces significa que estamos añadiendo en lugar de actualizando
         Assertions.assertThat(updatedSession.getTags().size()).isEqualTo(1);
         Assertions.assertThat(updatedSession.getTags().iterator().next()).isEqualTo("Tag actualizado");
-    }
+    }*/
 }

@@ -2,7 +2,6 @@ package com.demokratica.backend.Model;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
