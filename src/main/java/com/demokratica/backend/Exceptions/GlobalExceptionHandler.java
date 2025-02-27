@@ -24,9 +24,13 @@ public class GlobalExceptionHandler {
         return handleExceptionsHelper(ex, 400);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDeniedException (Exception ex) {
+        return handleExceptionsHelper(ex, 403);
+    }
+
     private ResponseEntity<?> handleExceptionsHelper (Exception ex, int httpStatus) {
         System.out.println(ex.getMessage());
         return ResponseEntity.status(httpStatus).body(ex.getMessage());
     }
-
 }

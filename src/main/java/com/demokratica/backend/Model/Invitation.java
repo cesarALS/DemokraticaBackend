@@ -35,34 +35,12 @@ public class Invitation {
     private Role role;
     public enum Role {DUEÑO, ADMIN, EDITOR, PARTICIPANTE};
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "invitation_status")
-    private InvitationStatus status;
-    public enum InvitationStatus {PENDIENTE, ACEPTADO, RECHAZADO};
-
     public Invitation() {
     }
     
-    public Invitation(User invitedUser, Session session, Role role, InvitationStatus status) {
+    public Invitation(User invitedUser, Session session, Role role) {
         this.invitedUser = invitedUser;
         this.session = session;
         this.role = role;
-        this.status = status;
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || o.getClass() != getClass()) return false;
-        Invitation that = (Invitation) o;
-        return (that.getInvitedUser().getEmail().equals(this.getInvitedUser().getEmail())) &&
-               (that.getSession().getId() == this.getSession().getId()) &&
-               (that.getRole() == this.getRole()) &&
-               (that.getStatus() == this.getStatus());
-    }
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.invitedUser.getEmail(), this.session.getId(), this.role, this.status);
     }
 }

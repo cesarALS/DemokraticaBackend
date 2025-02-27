@@ -15,13 +15,13 @@ import org.springframework.stereotype.Service;
 import com.demokratica.backend.Exceptions.InvalidInvitationsException;
 import com.demokratica.backend.Exceptions.InvalidTagsException;
 import com.demokratica.backend.Exceptions.RoleNotFoundException;
+import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.SessionTag;
 import com.demokratica.backend.Model.User;
-import com.demokratica.backend.Model.Invitation.InvitationStatus;
 import com.demokratica.backend.Model.Invitation.Role;
 import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -56,19 +56,8 @@ public class SessionService {
 
     @Transactional
     public Session updateSession (Long sessionId, String userEmail, NewSessionDTO updatedSessionDTO) {
-        //Primero hay que verificar que el usuario tenga los permisos necesarios para reconfigurar la sesión (DUEÑO solamente, por ahora)
-        Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
-        role.ifPresent(presentRole -> {
-            if (presentRole != Invitation.Role.DUEÑO) {
-                throw new RuntimeException("User with email " + userEmail + " isn't owner of the session he is trying to update");    
-            }
-        });
-        if (role.isEmpty()) {
-            throw new RuntimeException("User with email " + userEmail + " wasn't invited to the session he is trying to update");
-        }
-
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
-                                new RuntimeException("Couldn't find a session with id " + sessionId + " in the database"));
+                                new SessionNotFoundException(sessionId));
         
         List<Poll> polls = session.getPolls();
 
@@ -108,7 +97,6 @@ public class SessionService {
             String invitedUserEmail = user.getEmail();
             if (commonEmails.contains(invitedUserEmail)) {
                 //Si el usuario ya había aceptado la invitación debemos preservar esto en la sesión actualizada
-                Invitation.InvitationStatus status = invitation.getStatus();
                 //Valor previo a la actualización
                 Invitation.Role newRole = invitation.getRole();
                 for (InvitationDTO invDto : updatedSessionDTO.invitations()) {
@@ -118,7 +106,7 @@ public class SessionService {
                     }
                 }
 
-                oldInvitations.add(new Invitation(user, session, newRole, status));
+                oldInvitations.add(new Invitation(user, session, newRole));
             }
         }
 
@@ -130,7 +118,7 @@ public class SessionService {
                     new UserNotFoundException(email)
                 );
                 
-                newInvitations.add(new Invitation(user, session, invDto.role(), InvitationStatus.PENDIENTE));
+                newInvitations.add(new Invitation(user, session, invDto.role()));
             }
         }
 
@@ -237,12 +225,12 @@ public class SessionService {
 
             User invitedUser = usersRepository.findById(invitedEmail).orElseThrow(() ->
                 new UserNotFoundException(invitedEmail));
-            invitations.add(new Invitation(invitedUser, session, role, InvitationStatus.PENDIENTE));
+            invitations.add(new Invitation(invitedUser, session, role));
         }
 
         User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
                 new UserNotFoundException(ownerEmail));
-        invitations.add(new Invitation(owner, session, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+        invitations.add(new Invitation(owner, session, Invitation.Role.DUEÑO));
 
         return invitations;
     }
