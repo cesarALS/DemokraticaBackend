@@ -60,73 +60,9 @@ public class SessionService {
                                 new SessionNotFoundException(sessionId));
         
         List<Poll> polls = session.getPolls();
-
-        /*
-         * El objetivo de este código es determinar qué invitaciones son nuevas y cuáles son antiguas y representan una actualización.
-         * Esto es necesario porque las invitaciones tienen un status de PENDIENTE, ACEPTADO y RECHAZADO. Si un usuario ya aceptó o rechazó,
-         * queremos evitar que esta información se pierda cuando el frontend nos manda una actualización de las invitaciones (como un nuevo
-         * invitado). 
-         * Si un usuario es un nuevo invitado, debemos poner el status de su invitación como PENDIENTE.
-         * Además debemos asegurarnos de que los roles de los nuevos usuarios sean los que nos piden en el JSON y que los roles de los
-         * antiguos invitados sigan siendo los mismos o sean actualizados.
-         * TODO: considerar abstraerlo en una nueva función
-         * TODO: buscar una manera más elegante de hacerlo. Tal vez con operaciones directamente en la BD se pueda
-         */
-        Set<String> oldInvitedUserEmails = session.getInvitations().stream()
-                                                .map(inv -> {
-                                                    return inv.getInvitedUser().getEmail();
-                                                })
-                                                .collect(Collectors.toSet());
-
-        Set<String> newInvitedUserEmails = updatedSessionDTO.invitations().stream()
-                                                .map(InvitationDTO::invitedUserEmail)
-                                                .collect(Collectors.toSet());
-
-        //Para los usuarios identificados con estos correos es necesario actualizar la invitación (rol) si llega a ser necesario. El
-        //status de la invitación se mantiene igual
-        Set<String> commonEmails = new HashSet<>(oldInvitedUserEmails);
-        commonEmails.retainAll(newInvitedUserEmails);
-        //Para los usuarios identificados con estos correos es necesario crear una invitación desde 0, con el rol que está en el JSON
-        //y status PENDIENTE
-        Set<String> newEmails = new HashSet<>(newInvitedUserEmails);
-        newEmails.removeAll(oldInvitedUserEmails);
-
-        ArrayList<Invitation> oldInvitations = new ArrayList<>();
-        for (Invitation invitation : session.getInvitations()) {
-            User user = invitation.getInvitedUser();
-            String invitedUserEmail = user.getEmail();
-            if (commonEmails.contains(invitedUserEmail)) {
-                //Si el usuario ya había aceptado la invitación debemos preservar esto en la sesión actualizada
-                //Valor previo a la actualización
-                Invitation.Role newRole = invitation.getRole();
-                for (InvitationDTO invDto : updatedSessionDTO.invitations()) {
-                    if (invitedUserEmail.equals(invDto.invitedUserEmail())) {
-                        newRole = invDto.role();
-                        break;
-                    }
-                }
-
-                oldInvitations.add(new Invitation(user, session, newRole));
-            }
-        }
-
-        ArrayList<Invitation> newInvitations = new ArrayList<>();
-        for (InvitationDTO invDto : updatedSessionDTO.invitations()) {
-            String email = invDto.invitedUserEmail();
-            if (newEmails.contains(email)) {
-                User user = usersRepository.findById(email).orElseThrow(() -> 
-                    new UserNotFoundException(email)
-                );
-                
-                newInvitations.add(new Invitation(user, session, invDto.role()));
-            }
-        }
-
-        ArrayList<Invitation> entireInvitations = new ArrayList<>();
-        entireInvitations.addAll(oldInvitations);
-        entireInvitations.addAll(newInvitations);
-
-        return sessionCreateUpdateHelper(session, polls, entireInvitations, updatedSessionDTO); 
+        List<Invitation> newInvitedUsers = validateInvitationList(userEmail, updatedSessionDTO.invitations(), session);
+        
+        return sessionCreateUpdateHelper(session, polls, newInvitedUsers, updatedSessionDTO); 
     }
 
     //TODO: agregar soporte para fecha de actualización y fecha de publicación

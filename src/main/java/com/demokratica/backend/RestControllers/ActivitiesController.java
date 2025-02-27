@@ -3,11 +3,11 @@ package com.demokratica.backend.RestControllers;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.Model.Invitation;
-import com.demokratica.backend.Model.Placeholder;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.PollTag;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
+import com.demokratica.backend.Security.AccessController;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.PollService;
 import com.demokratica.backend.Services.SessionService;
@@ -36,13 +36,19 @@ public class ActivitiesController {
     
     private PollService pollService;
     private SessionService sessionService;
-    public ActivitiesController (PollService pollService, SessionService sessionService) {
+    private AccessController accessController;
+    public ActivitiesController (PollService pollService, SessionService sessionService, 
+                                AccessController accessController) {
         this.pollService = pollService;
         this.sessionService = sessionService;
+        this.accessController = accessController;
     }
 
     @PostMapping("/api/sessions/{id}/polls")
     public ResponseEntity<?> createPoll(@PathVariable Long id, @RequestBody NewPollDTO newPollDTO) {
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        accessController.checkIfCanCreateActivity(userEmail, id);
+        
         Poll createdPoll = pollService.createPoll(newPollDTO, id);
         CreatedPollResponse response = new CreatedPollResponse(createdPoll);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -74,18 +80,6 @@ public class ActivitiesController {
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
-    @PostMapping("/api/sessions/{id}/invitations/accept")
-    public ResponseEntity<?> acceptInvitation() {
-        //Se podría implementar idempotencia para que el resultado de aceptar dos veces la
-        //misma invitación no cause ningún error, en lugar de devolver 409 CONFLICT
-        //TODO: los posibles códigos http a usar son: 204 NO_CONTENT en caso de éxito, 403 FORBIDDEN (para no filtrar info)
-        //en caso de que o no exista la sesión o no exista la invitación, 
-        //ChatGPT sugirió 409 CONFLICT para aceptar invitaciones previamente aceptadas
-        
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-    
     
     public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
     }

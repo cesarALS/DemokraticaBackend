@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Security.SecurityConfig;
+import com.demokratica.backend.Security.AccessController;
 import com.demokratica.backend.Services.SessionService;
 import com.demokratica.backend.Services.SessionService.GetSessionsDTO;
 
@@ -26,8 +27,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class SessionController {
     
     private SessionService sessionService;
-    public SessionController (SessionService sessionService) {
+    private AccessController accessController;
+    public SessionController (SessionService sessionService, AccessController accessController) {
         this.sessionService = sessionService;
+        this.accessController = accessController;
     }
 
     @GetMapping("/api/sessions")
@@ -48,6 +51,7 @@ public class SessionController {
     @PutMapping("api/sessions/{id}")
     public ResponseEntity<?> updateSession(@PathVariable Long id, @RequestBody NewSessionDTO dto) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        accessController.checkifCanUpdateSession(userEmail, id);
         Session updatedSession = sessionService.updateSession(id, userEmail, dto);
         NewSessionResponse response = new NewSessionResponse(updatedSession.getId(), dto);
         return new ResponseEntity<>(response, HttpStatus.OK);

@@ -10,7 +10,7 @@ import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Repositories.InvitationsRepository;
 
 @Component
-public class SessionPermissionEvaluator {
+public class AccessController {
     
     @Autowired
     private InvitationsRepository invitationsRepository;
@@ -21,6 +21,13 @@ public class SessionPermissionEvaluator {
         Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
         if (!role.isPresent() || role.get() != Invitation.Role.DUEÑO) {
             throw new AccessDeniedException(AccessDeniedException.Type.UPDATE_SESSION);
+        }
+    }
+
+    public void checkIfCanCreateActivity(String userEmail, Long sessionId) {
+        Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
+        if (!role.isPresent() || role.get() != Invitation.Role.DUEÑO) {
+            throw new AccessDeniedException(AccessDeniedException.Type.CREATE_ACTIVITY);
         }
     }
 }

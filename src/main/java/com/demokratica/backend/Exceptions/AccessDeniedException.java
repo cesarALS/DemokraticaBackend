@@ -4,9 +4,10 @@ import java.util.HashMap;
 
 public class AccessDeniedException extends RuntimeException {
     
-    public enum Type {UPDATE_SESSION};
+    public enum Type {UPDATE_SESSION, CREATE_ACTIVITY};
     private HashMap<Type, String> message = new HashMap<>() {{
         put(Type.UPDATE_SESSION, "User doesn't have permission to update the session");
+        put(Type.CREATE_ACTIVITY, "User doesn't have permission to create activities");
     }};
     private Type type;
 
