@@ -44,7 +44,7 @@ public class Poll {
      * necesitan el Poll para calcular su hashCode (porque la relación es bidireccional)
      * Por eso relego la responsabilidad de garantizar unicidad al servicio PollServicec
      */
-    @OneToMany(mappedBy =  "poll", cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL)
     private List<PollTag> tags;
 
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)

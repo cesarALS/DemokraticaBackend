@@ -48,46 +48,10 @@ public class SessionService {
     @Transactional
     public Session createSession(String ownerEmail, NewSessionDTO newSessionDTO) {
         Session newSession = new Session();
-        //TODO: Para evitar duplicados. No sé cómo hacerlo por ahora ni si sea necesario
         List<Poll> polls = Collections.emptyList();
+        List<Invitation> invitedUsers = validateInvitationList(ownerEmail, newSessionDTO.invitations(), newSession);
 
-        //También debemos añadir al usuario que creó la sesión con rol de DUEÑO y status de invitación ACEPTADO
-        //Hacemos esto de primeras para así asegurarnos de que no se pueda invitar dos veces al dueño y con 
-        //un rol posiblemente distinto
-        Map<User, Invitation> invitedUsers = new HashMap<>();
-        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
-                    new UserNotFoundException(ownerEmail));
-        invitedUsers.put(owner, new Invitation(owner, newSession, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
-        for (InvitationDTO dto : newSessionDTO.invitations()) {
-            String userEmail = dto.invitedUserEmail();
-            if (userEmail.equals(ownerEmail)) {
-                //Una lista de invitados válida no debería incluir al dueño porque se agrega automáticamente
-                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_OWNER);
-            }
-            if (dto.role() == Invitation.Role.DUEÑO) {
-                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_ADDITIONAL_OWNER);
-            }
-
-            User user = usersRepository.findById(userEmail).orElseThrow(() -> 
-                    new UserNotFoundException(userEmail));
-            if (invitedUsers.containsKey(user)) {
-                Invitation.Role firstRole = invitedUsers.get(user).getRole();
-                Invitation.Role secondRole = dto.role();
-                if (firstRole != secondRole) {
-                    //Se invitó al mismo usuario dos veces pero con distintos roles. No se puede decidir qué hacer y es
-                    //necesario lanzar una excepción
-                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE_DIFF_ROLE);
-                } else {
-                    //Podríamos simplemente ignorar esta invitación duplicada, pero creo que es preferible informarle
-                    //al frontend que la invitación tiene un error
-                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE);
-                }
-            }
-
-            invitedUsers.put(user, new Invitation(user, newSession, dto.role(), InvitationStatus.PENDIENTE));
-        }
-
-        return sessionCreateUpdateHelper(newSession, polls, new HashSet<>(invitedUsers.values()), newSessionDTO);
+        return sessionCreateUpdateHelper(newSession, polls, invitedUsers, newSessionDTO);
     }
 
     @Transactional
@@ -174,12 +138,12 @@ public class SessionService {
         entireInvitations.addAll(oldInvitations);
         entireInvitations.addAll(newInvitations);
 
-        return sessionCreateUpdateHelper(session, polls, new HashSet<>(entireInvitations), updatedSessionDTO); 
+        return sessionCreateUpdateHelper(session, polls, entireInvitations, updatedSessionDTO); 
     }
 
     //TODO: agregar soporte para fecha de actualización y fecha de publicación
     @Transactional
-    private Session sessionCreateUpdateHelper (Session session, List<Poll> polls, Set<Invitation> invitations, NewSessionDTO newSessionDTO) {
+    private Session sessionCreateUpdateHelper (Session session, List<Poll> polls, List<Invitation> invitations, NewSessionDTO newSessionDTO) {
             session.setTitle(newSessionDTO.title());
             session.setDescription(newSessionDTO.description());
             session.setStartTime(newSessionDTO.startTime());
@@ -198,11 +162,10 @@ public class SessionService {
 
                 SessionTag tag = new SessionTag();
                 tag.setTagText(dto.text());
-                tag.setSession(session);
 
                 tagsMap.put(dto.text(), tag);
             }
-            session.setTags(new HashSet<>(tagsMap.values()));
+            session.setTags(new ArrayList<>(tagsMap.values()));
             
             return sessionsRepository.save(session);
     }
@@ -242,6 +205,46 @@ public class SessionService {
             //Devolvemos lo mismo en ambos casos para que no se puede inferir qué sesiones existen y cuáles no.
             throw new RuntimeException("The user with email " + userEmail + " either wasn't invited to this session, he isn't the owner or the session doesn't exist");
         }
+    }
+
+
+
+    public List<Invitation> validateInvitationList(String ownerEmail, List<InvitationDTO> invitationDTOs, Session session) {
+        Set<String> invitedEmails = new HashSet<>();
+        Map<String, Invitation.Role> emailRoles = new HashMap<>();
+
+        ArrayList<Invitation> invitations = new ArrayList<>();
+        for (InvitationDTO invitation : invitationDTOs) {
+            String invitedEmail = invitation.invitedUserEmail();
+            Invitation.Role role = invitation.role();
+
+            if (invitedEmail.equals(ownerEmail)) {
+                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_OWNER);
+            }
+
+            emailRoles.putIfAbsent(invitedEmail, role);
+            if (!invitedEmails.add(invitedEmail)) {
+                if (emailRoles.get(invitedEmail) != role) {
+                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE_DIFF_ROLE);
+                } else {
+                    throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_TWICE);
+                }
+            }
+
+            if (role.equals(Invitation.Role.DUEÑO) && !invitedEmail.equals(ownerEmail)) {
+                throw new InvalidInvitationsException(InvalidInvitationsException.Type.INVITED_ADDITIONAL_OWNER);
+            }
+
+            User invitedUser = usersRepository.findById(invitedEmail).orElseThrow(() ->
+                new UserNotFoundException(invitedEmail));
+            invitations.add(new Invitation(invitedUser, session, role, InvitationStatus.PENDIENTE));
+        }
+
+        User owner = usersRepository.findById(ownerEmail).orElseThrow(() -> 
+                new UserNotFoundException(ownerEmail));
+        invitations.add(new Invitation(owner, session, Invitation.Role.DUEÑO, InvitationStatus.ACEPTADO));
+
+        return invitations;
     }
 
     public Invitation.Role getUserRoleFromEmail(String email, long sessionId) {

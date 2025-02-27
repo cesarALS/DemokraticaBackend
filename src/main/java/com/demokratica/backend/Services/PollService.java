@@ -68,7 +68,6 @@ public class PollService {
             PollTag tag = new PollTag();
             String tagText = tagDto.text();
             tag.setTagText(tagText);
-            tag.setPoll(poll);
 
             return tag;
         }).collect(Collectors.toList()));
