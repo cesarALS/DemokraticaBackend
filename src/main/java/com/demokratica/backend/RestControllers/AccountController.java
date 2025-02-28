@@ -33,8 +33,8 @@ public class AccountController {
         this.jwtService = jwtService;
     }
 
-    @PutMapping("/api/users/{id}/password")
-    public ResponseEntity<?> updatePassword(@PathVariable String userEmail, @RequestBody PasswordChange passwordChange) {
+    @PutMapping("/api/users/{email}/password")
+    public ResponseEntity<?> updatePassword(@PathVariable String email, @RequestBody PasswordChange passwordChange) {
         /*
          * Estoy asumiendo que en el formulario para actualizar la contraseña pide la contraseña actual por razones
          * de seguridad (para que si deja la cuenta abierta otro no pueda llegar a cambiarle la contraseña)
@@ -42,7 +42,7 @@ public class AccountController {
          * Luego sí se hace la actualización
          */
         try {
-            userService.updatePassword(userEmail, passwordChange.currentPassword(), passwordChange.newPassword());
+            userService.updatePassword(email, passwordChange.currentPassword(), passwordChange.newPassword());
         } catch (UserNotFoundException e) {
             ErrorResponse error = new ErrorResponse(e.getMessage());
             return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
