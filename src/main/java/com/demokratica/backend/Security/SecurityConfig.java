@@ -39,7 +39,8 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(HttpMethod.DELETE, "/api/sessions/").permitAll()
 				.requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
-				.anyRequest().authenticated()
+				.requestMatchers("/api/webhooks/mercadopago").permitAll() // La validación con x-request se hará manualmente
+				.anyRequest().authenticated() 
 			)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

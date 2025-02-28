@@ -15,10 +15,10 @@ import java.util.Map;
 @Service
 public class MercadoPagoService {    
 
-    public String crearPreferenciaDePago(String planId) throws MPException, MPApiException {
+    public String crearPreferenciaDePago(String planId, String email) throws MPException, MPApiException {
         System.out.println(planId);
-        // Configurar MercadoPago con el Access Token
-        MercadoPagoConfig.setAccessToken("APP_USR-2595305637078013-020521-aeef252ee0e80a9800678340dce7dc81-2253827844");
+        
+        MercadoPagoConfig.setAccessToken("APP_USR-2595305637078013-020521-aeef252ee0e80a9800678340dce7dc81-2253827844");        
         
          // Definir precios según el plan
         Map<String, BigDecimal> precios = new HashMap<>();
@@ -27,31 +27,28 @@ public class MercadoPagoService {
         precios.put("Profesional", new BigDecimal(120000));        
 
         if (!precios.containsKey(planId)) {
-            throw new IllegalArgumentException("Plan no válido: " + planId);
+            return ("Plan " + planId + " no válido");
         }
 
-
-        // Crear una preferencia con el plan seleccionado
+        // Crear una preferencia de pago con el plan seleccionado
         PreferenceItemRequest item = PreferenceItemRequest.builder()
             .id(planId)
             .title("Plan " + planId.substring(0, 1).toUpperCase() + planId.substring(1))
             .quantity(1)
             .currencyId("COP")
             .unitPrice(precios.get(planId)) 
-            .build();               
-
-       
-        //List<PreferenceItemRequest> items = new ArrayList<>();        
+            .build();                           
 
         PreferenceRequest preferenceRequest = PreferenceRequest.builder()
         .items(java.util.Collections.singletonList(item))
-        .build();
-
-        //PreferenceRequest preferenceRequest = PreferenceRequest.builder().items(items).build();
+        .binaryMode(true) // Solo habrá dos estados de pago: Aprobado, y no aprobado        
+        .externalReference(email) // Asociar el email del usaurio a la transacción
+        .build();        
 
         PreferenceClient client = new PreferenceClient();     
 
-        Preference preference = client.create(preferenceRequest);
+        Preference preference = client.create(preferenceRequest);        
+        
         // Retornar la URL de pago
         return preference.getInitPoint();
     }
