@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
 //TODO: poner los public records usados por varias clases en un lugar aparte, para centralizar y eliminar la redundancia
 @RestController
 @CrossOrigin(origins = {"http://localhost:3000", "https://demokratica.vercel.app"}, allowCredentials = "true")
@@ -26,8 +25,6 @@ public class LoginController {
         this.jwtService = jwtService;
     }
     
-    //TODO: cambiar el nombre endpoint por uno que sea más RESTful 
-    //TODO: recibir los parámetros como un JSON en el body
     @PostMapping("/api/auth/login")
     public ResponseEntity<?> loginWithPassword(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.email();
