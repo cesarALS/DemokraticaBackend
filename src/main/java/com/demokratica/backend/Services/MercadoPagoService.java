@@ -7,8 +7,12 @@ import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,5 +56,40 @@ public class MercadoPagoService {
         // Retornar la URL de pago
         return preference.getInitPoint();
     }
+
+    public static final String WEBHOOK_VALIDO = "Webhook recibido";
+    public static final String WEBHOOK_NO_AUTH = "No autorizado";    
+    public static final String WEBHOOK_NOT_SUPPORTED_EVENT = "Evento no soportado";
+    
+    // Verificar la respuesta enviada por mercado pago cuando sucede un pago
+    // Primer elemento: Respuesta de la api. Segundo elemento: id, o código de fallo
+    public ArrayList<String> handleMercadoPagoWebhookRequest (MercadoPagoWebhookResponseDTO payload, String signature){            
+        
+        ArrayList<String> transactionValidity = new ArrayList<String>(2);
+        
+        if(!isValidSignature(signature)) {
+            transactionValidity.add(WEBHOOK_NO_AUTH);
+            transactionValidity.add(null);
+        }
+
+        transactionValidity.add(WEBHOOK_VALIDO);
+        
+        String eventType = (String) payload.type();
+        String action = (String) payload.action();
+        
+        if("payment".equals(eventType) && "payment.updated".equals(action)){
+            String id = payload.data().id();                                                
+            transactionValidity.add(id);                                            
+        } else transactionValidity.add(WEBHOOK_NOT_SUPPORTED_EVENT);
+        
+        return transactionValidity;
+    }
+
+    // TODO: Verificar la validez de la x-signature enviada por mercado pago para autenticarse
+    private boolean isValidSignature(String signature){return true;}
+
+    public record MercadoPagoUserIdDTO (String id){}
+    
+    public record MercadoPagoWebhookResponseDTO (String type, String action, MercadoPagoUserIdDTO data){}
 }
 
