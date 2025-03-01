@@ -2,6 +2,8 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demokratica.backend.DTOs.ActivityDTO;
+import com.demokratica.backend.DTOs.CreatedWordCloudDTO;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
@@ -11,6 +13,7 @@ import com.demokratica.backend.Security.AccessController;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.PollService;
 import com.demokratica.backend.Services.SessionService;
+import com.demokratica.backend.Services.WordCloudService;
 import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
@@ -35,24 +38,33 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ActivitiesController {
     
     private PollService pollService;
+    private WordCloudService wordCloudService;
     private SessionService sessionService;
     private AccessController accessController;
     public ActivitiesController (PollService pollService, SessionService sessionService, 
-                                AccessController accessController) {
+                                WordCloudService wordCloudService, AccessController accessController) {
         this.pollService = pollService;
         this.sessionService = sessionService;
+        this.wordCloudService = wordCloudService;
         this.accessController = accessController;
     }
 
     @PostMapping("/api/sessions/{id}/polls")
     public ResponseEntity<?> createPoll(@PathVariable Long id, @RequestBody NewPollDTO newPollDTO) {
-        String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        accessController.checkIfCanCreateActivity(userEmail, id);
+        accessController.checkIfCanCreateActivity(id);
         
         Poll createdPoll = pollService.createPoll(newPollDTO, id);
         CreatedPollResponse response = new CreatedPollResponse(createdPoll);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    @PostMapping("/api/sessions/{id}/wordclouds")
+    public ResponseEntity<?> createWordCloud(@PathVariable Long id, @RequestBody ActivityDTO newWordCloudDTO) {
+        accessController.checkIfCanCreateActivity(id);
+        CreatedWordCloudDTO response = wordCloudService.createWordCloud(id, newWordCloudDTO);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    
     
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
@@ -83,6 +95,7 @@ public class ActivitiesController {
     
     public record NewPollDTO(String question, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
     }
+
 
     public record PollOptionDTO(Long id, String description, ArrayList<VoterDTO> voters) {
     }

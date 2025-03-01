@@ -15,7 +15,8 @@ public class AccessController {
     @Autowired
     private InvitationsRepository invitationsRepository;
 
-    public void checkifCanUpdateSession(String userEmail, Long sessionId) {
+    public void checkifCanUpdateSession(Long sessionId) {
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
         //Múltiples razones posibles para no permitirle actualizar una sesión: no tiene el rol necesario,
         //directamente no ha sido invitado a la sesión o la sesión ni siquiera existe
         Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
@@ -24,7 +25,8 @@ public class AccessController {
         }
     }
 
-    public void checkIfCanCreateActivity(String userEmail, Long sessionId) {
+    public void checkIfCanCreateActivity(Long sessionId) {
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
         Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
         if (!role.isPresent() || role.get() != Invitation.Role.DUEÑO) {
             throw new AccessDeniedException(AccessDeniedException.Type.CREATE_ACTIVITY);
