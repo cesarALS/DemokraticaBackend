@@ -4,12 +4,14 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RequestMapping("/api/webhooks")
+@CrossOrigin(origins = "*") // Toca deshabilitarlo completamente
 public class WebhookControllers {
     
     // API que le permite a mercado pago notificar sobre el éxito o fracaso de la transacción
