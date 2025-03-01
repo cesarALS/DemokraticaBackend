@@ -26,6 +26,7 @@ public class Session {
     private String title;
     @Column(length = 500, nullable = false)
     private String description;
+    
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
@@ -35,4 +36,6 @@ public class Session {
     private List<Invitation> invitations;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<Poll> polls;
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
+    private List<WordCloud> wordClouds;
 }
