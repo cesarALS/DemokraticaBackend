@@ -59,8 +59,7 @@ public class PollService {
         Poll poll = new Poll();
         poll.setSession(session);
         
-        poll.setTitle(dto.title());
-        poll.setDescription(dto.description());
+        poll.setQuestion(dto.question());
         poll.setStartTime(dto.startTime());
         poll.setEndTime(dto.endTime());
         
@@ -95,8 +94,7 @@ public class PollService {
 
         ArrayList<PollDTO> polls = session.getPolls().stream().map(poll -> {
             Long pollId = poll.getId();
-            String pollTitle = poll.getTitle();
-            String pollDescription = poll.getDescription();
+            String pollQuestion = poll.getQuestion();
             LocalDateTime startTime = poll.getStartTime();
             LocalDateTime endTime = poll.getEndTime();
 
@@ -116,7 +114,7 @@ public class PollService {
 
             return new PollDTO(pollId, Placeholder.ActivityType.POLL, 
                                 Placeholder.getEventStatus(startTime, endTime), alreadyParticipated, 
-                                pollTitle, pollDescription, startTime, endTime, tags, pollResults);
+                                pollQuestion, startTime, endTime, tags, pollResults);
 
         }).collect(Collectors.toCollection(ArrayList::new));
 
@@ -182,7 +180,7 @@ public class PollService {
     }
 
     public record PollDTO (Long id, Placeholder.ActivityType type, Placeholder.EventStatus activityStatus, 
-                            boolean alreadyParticipated, String title, String description, 
+                            boolean alreadyParticipated, String question,  
                             LocalDateTime startTime, LocalDateTime endTime, 
                             ArrayList<TagDTO> tags, ArrayList<PollResultDTO> pollResults) {
     }

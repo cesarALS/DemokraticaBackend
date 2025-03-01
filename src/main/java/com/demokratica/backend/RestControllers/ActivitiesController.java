@@ -81,7 +81,7 @@ public class ActivitiesController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
-    public record NewPollDTO(String title, String description, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
+    public record NewPollDTO(String question, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags, ArrayList<PollOptionDTO> pollOptions) {
     }
 
     public record PollOptionDTO(Long id, String description, ArrayList<VoterDTO> voters) {
@@ -97,11 +97,11 @@ public class ActivitiesController {
     public record PollOptionsResponse (Long id, String description) {
     }
 
-    public record CreatedPollResponse (Long id, String title, String description, LocalDateTime startTime, 
+    public record CreatedPollResponse (Long id, String question, LocalDateTime startTime, 
                                         LocalDateTime endTime, List<String> tags, List<PollOptionsResponse> pollOptions) {
         
         public CreatedPollResponse (Poll createdPoll) {
-            this(createdPoll.getId(), createdPoll.getTitle(), createdPoll.getDescription(), createdPoll.getStartTime(), 
+            this(createdPoll.getId(), createdPoll.getQuestion(), createdPoll.getStartTime(), 
                     createdPoll.getEndTime(), getFormattedTags(createdPoll.getTags()), 
                     getFormattedPollOptions((createdPoll.getOptions())));
         }

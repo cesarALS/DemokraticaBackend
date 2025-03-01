@@ -13,16 +13,14 @@ import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 //más general vendrá bien cuando añada las pruebas para validar atributos
 public class NewPollDTOBuilder {
     
-    private String title;
-    private String description;
+    private String question;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private ArrayList<TagDTO> tagDTOs;
     private ArrayList<PollOptionDTO> pollOptionDTOs;
 
     public NewPollDTOBuilder (int pollId) {
-        title = "poll title " + String.valueOf(pollId);
-        description = "poll description " + String.valueOf(pollId);
+        question = "poll question " + String.valueOf(pollId);
         startTime = LocalDateTime.now();
         endTime = startTime.plusHours(1);
 
@@ -37,16 +35,11 @@ public class NewPollDTOBuilder {
     }
 
     public NewPollDTO build () {
-        return new NewPollDTO(this.title, this.description, this.startTime, this.endTime, this.tagDTOs, this.pollOptionDTOs);
+        return new NewPollDTO(this.question, this.startTime, this.endTime, this.tagDTOs, this.pollOptionDTOs);
     }
 
-    public NewPollDTOBuilder setTitle (String title) {
-        this.title = title;
-        return this;
-    }
-
-    public NewPollDTOBuilder setDescription (String description) {
-        this.description = description;
+    public NewPollDTOBuilder setQuestion (String question) {
+        this.question = question;
         return this;
     }
 
