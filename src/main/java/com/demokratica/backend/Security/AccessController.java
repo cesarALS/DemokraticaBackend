@@ -6,10 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.demokratica.backend.Exceptions.AccessDeniedException;
+import com.demokratica.backend.Exceptions.TextNotFoundException;
 import com.demokratica.backend.Exceptions.WordCloudNotFoundException;
 import com.demokratica.backend.Model.Invitation;
+import com.demokratica.backend.Model.Text;
 import com.demokratica.backend.Model.WordCloud;
 import com.demokratica.backend.Repositories.InvitationsRepository;
+import com.demokratica.backend.Repositories.TextRepository;
 import com.demokratica.backend.Repositories.WordCloudRepository;
 
 @Component
@@ -19,6 +22,8 @@ public class AccessController {
     private InvitationsRepository invitationsRepository;
     @Autowired
     private WordCloudRepository wordCloudRepository;
+    @Autowired
+    private TextRepository textRepository;
 
 
     private Invitation.Role checkIfCanDoActionInSession(Long sessionId, Invitation.Role neededRole, RuntimeException ex) {
@@ -68,5 +73,13 @@ public class AccessController {
 
         RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.DELETE_ACTIVITY);
         checkIfCanDoActionInSession(wc.getSession().getId(), Invitation.Role.DUEÑO, ex);
+    }
+
+    public void checkIfCanDeleteTexts(Long textId) {
+        Text text = textRepository.findById(textId).orElseThrow(() -> 
+            new TextNotFoundException(textId));
+
+        RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.DELETE_ACTIVITY);
+        checkIfCanDoActionInSession(text.getSession().getId(), Invitation.Role.DUEÑO, ex);
     }
 }

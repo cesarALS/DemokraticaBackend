@@ -96,6 +96,7 @@ public class WordCloudService {
 
     @Transactional
     public void deleteWordCloud(Long wordCloudId) {
+        //Para asegurarse de que exista
         WordCloud wc = wordCloudRepository.findById(wordCloudId).orElseThrow(() -> 
             new WordCloudNotFoundException(wordCloudId));
 
@@ -127,7 +128,7 @@ public class WordCloudService {
 
             WordCloudDTO dto = new WordCloudDTO(id, question, alreadyParticipated, startTime, endTime, creationTime, tagDTOs);
             dto.setResults(new ArrayList<>(userWordRepository.findWordsByWordCloud(id)));
-            
+
             return dto;
         }).collect(Collectors.toCollection(ArrayList::new));
 

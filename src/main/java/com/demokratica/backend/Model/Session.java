@@ -38,4 +38,6 @@ public class Session {
     private List<Poll> polls;
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<WordCloud> wordClouds;
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
+    private List<Text> texts;
 }

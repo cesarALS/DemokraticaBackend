@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.DTOs.ActivityCreationDTO;
 import com.demokratica.backend.DTOs.SavedActivityDTO;
+import com.demokratica.backend.DTOs.SavedTextDTO;
+import com.demokratica.backend.DTOs.TextCreationDTO;
 import com.demokratica.backend.DTOs.WordCloudDTO;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
@@ -14,6 +16,7 @@ import com.demokratica.backend.Security.AccessController;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.ActivitiesService;
 import com.demokratica.backend.Services.PollService;
+import com.demokratica.backend.Services.TextService;
 import com.demokratica.backend.Services.WordCloudService;
 
 import java.time.LocalDateTime;
@@ -40,11 +43,14 @@ public class ActivitiesController {
     private PollService pollService;
     private WordCloudService wordCloudService;
     private ActivitiesService activitiesService;
+    private TextService textService;
     private AccessController accessController;
     public ActivitiesController (PollService pollService, WordCloudService wordCloudService, 
-                                ActivitiesService activitiesService, AccessController accessController) {
+                                ActivitiesService activitiesService, TextService textService, 
+                                AccessController accessController) {
         this.pollService = pollService;
         this.wordCloudService = wordCloudService;
+        this.textService = textService;
         this.activitiesService = activitiesService;
         this.accessController = accessController;
     }
@@ -78,7 +84,20 @@ public class ActivitiesController {
         wordCloudService.deleteWordCloud(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @PostMapping("/api/sessions/{id}/texts")
+    public ResponseEntity<?> createText(@PathVariable Long id, @RequestBody TextCreationDTO TextCreationDTO) {
+        accessController.checkIfCanCreateActivity(id);
+        SavedTextDTO response = textService.createText(id, TextCreationDTO);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
     
+    @DeleteMapping("/api/texts/{id}")
+    public ResponseEntity<?> deleteText(@PathVariable Long id) {
+        accessController.checkIfCanDeleteTexts(id);
+        textService.deleteText(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
     
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
