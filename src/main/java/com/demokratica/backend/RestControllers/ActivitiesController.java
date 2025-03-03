@@ -3,6 +3,7 @@ package com.demokratica.backend.RestControllers;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.DTOs.ActivityCreationDTO;
+import com.demokratica.backend.DTOs.SavedActivityDTO;
 import com.demokratica.backend.DTOs.WordCloudDTO;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
@@ -11,9 +12,9 @@ import com.demokratica.backend.Model.PollTag;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 import com.demokratica.backend.Security.AccessController;
 import com.demokratica.backend.Security.SecurityConfig;
+import com.demokratica.backend.Services.ActivitiesService;
 import com.demokratica.backend.Services.PollService;
 import com.demokratica.backend.Services.WordCloudService;
-import com.demokratica.backend.Services.PollService.PollDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,11 +39,13 @@ public class ActivitiesController {
     
     private PollService pollService;
     private WordCloudService wordCloudService;
+    private ActivitiesService activitiesService;
     private AccessController accessController;
     public ActivitiesController (PollService pollService, WordCloudService wordCloudService, 
-                                AccessController accessController) {
+                                ActivitiesService activitiesService, AccessController accessController) {
         this.pollService = pollService;
         this.wordCloudService = wordCloudService;
+        this.activitiesService = activitiesService;
         this.accessController = accessController;
     }
 
@@ -69,7 +72,7 @@ public class ActivitiesController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
-    @DeleteMapping("/api/wordsclouds/{id}")
+    @DeleteMapping("/api/wordclouds/{id}")
     public ResponseEntity<?> deleteWordCloud(@PathVariable Long id) {
         accessController.checkIfCanDeleteWordClouds(id);
         wordCloudService.deleteWordCloud(id);
@@ -80,8 +83,8 @@ public class ActivitiesController {
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         Invitation.Role userRole = accessController.checkIfCanParticipate(id);
-        ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id));
-        GetActivitiesDTO response = new GetActivitiesDTO(id, userRole, userPolls);
+        ArrayList<SavedActivityDTO> activities = activitiesService.getSessionActivities(id);
+        GetActivitiesDTO response = new GetActivitiesDTO(id, userRole, activities);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -149,7 +152,7 @@ public class ActivitiesController {
         
     }
 
-    public record GetActivitiesDTO(Long sessionId, Invitation.Role userRole, ArrayList<PollDTO> pollDTOs) {
+    public record GetActivitiesDTO(Long sessionId, Invitation.Role userRole, ArrayList<SavedActivityDTO> activities) {
     }
     
 }

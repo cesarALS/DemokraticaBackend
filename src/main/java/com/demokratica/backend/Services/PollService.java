@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.PollTag;
+import com.demokratica.backend.DTOs.SavedActivityDTO;
 import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Placeholder;
@@ -82,13 +83,13 @@ public class PollService {
     }
 
     @Transactional
-    public ArrayList<PollDTO> getSessionPolls (Long sessionId) {
+    public ArrayList<SavedActivityDTO> getSessionPolls (Long sessionId) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
 
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
             new SessionNotFoundException(sessionId));
 
-        ArrayList<PollDTO> polls = session.getPolls().stream().map(poll -> {
+        ArrayList<SavedActivityDTO> polls = session.getPolls().stream().map(poll -> {
             Long pollId = poll.getId();
             String pollQuestion = poll.getQuestion();
             LocalDateTime startTime = poll.getStartTime();
@@ -109,10 +110,10 @@ public class PollService {
                 alreadyParticipated = true;
             }
 
-            return new PollDTO(pollId, Placeholder.ActivityType.POLL, 
-                                Placeholder.getEventStatus(startTime, endTime), alreadyParticipated, 
-                                pollQuestion, startTime, endTime, tags, pollResults);
-
+            SavedActivityDTO dto = new SavedActivityDTO(pollId, pollQuestion, alreadyParticipated, startTime, 
+                            endTime, creationTime, tags, Placeholder.ActivityType.POLL);
+            dto.setResults(new ArrayList<>(pollResults));
+            return dto;
         }).collect(Collectors.toCollection(ArrayList::new));
 
         return polls;

@@ -29,10 +29,10 @@ public class WordCloud {
 
     private String question;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WordCloudTag> tags;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "wordCloud", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserWord> words;
 
     @ManyToOne
