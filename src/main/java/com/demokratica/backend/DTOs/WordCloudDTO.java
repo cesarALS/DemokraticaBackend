@@ -16,16 +16,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class CreatedWordCloudDTO extends ActivityDTO {
+public class WordCloudDTO extends SavedActivityDTO {
     
-    private Long id;
-    private Placeholder.ActivityType type;
     private ArrayList<String> words;
 
-    public CreatedWordCloudDTO (Long id, String question, LocalDateTime startTime, LocalDateTime endTime, ArrayList<TagDTO> tags) {
-        super(question, startTime, endTime, tags);
-        this.id = id;
-        this.type = Placeholder.ActivityType.WORD_CLOUD;
+    public WordCloudDTO (Long id, String question, boolean alreadyParticipated, LocalDateTime startTime, 
+                        LocalDateTime endTime, LocalDateTime creationTime, ArrayList<TagDTO> tags) {
+        
+        super(id, question, alreadyParticipated, startTime, endTime, creationTime, tags, Placeholder.ActivityType.WORD_CLOUD);
         this.words = new ArrayList<>(Collections.emptyList());
     }
 }

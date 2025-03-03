@@ -86,6 +86,7 @@ public class PollService {
 
     @Transactional
     public ArrayList<PollDTO> getSessionPolls (Long sessionId, String userEmail) {
+        //Para verificar que el usuario haya sido invitado y por lo tanto tenga permiso para leer esta información
         invitationsRepository.findInvitationByUserAndSessionId(userEmail, sessionId)
                 .orElseThrow(() -> new InvitationNotFoundException(userEmail, sessionId));
 
@@ -96,6 +97,7 @@ public class PollService {
             Long pollId = poll.getId();
             String pollQuestion = poll.getQuestion();
             LocalDateTime startTime = poll.getStartTime();
+            LocalDateTime creationTime = poll.getCreationTime();
             LocalDateTime endTime = poll.getEndTime();
 
             ArrayList<TagDTO> tags = poll.getTags().stream().map(tag -> {
@@ -108,7 +110,7 @@ public class PollService {
             pollResults.add(new PollResultDTO(null, null, nonVoters));
             
             boolean alreadyParticipated = false;
-            if (pollsRepository.findUserVoteByUserAndSession(userEmail, sessionId).isPresent()) {
+            if (pollsRepository.findUserVoteByUserAndPoll(userEmail, pollId).isPresent()) {
                 alreadyParticipated = true;
             }
 

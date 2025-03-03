@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.demokratica.backend.DTOs.ActivityDTO;
-import com.demokratica.backend.DTOs.CreatedWordCloudDTO;
+import com.demokratica.backend.DTOs.ActivityCreationDTO;
+import com.demokratica.backend.DTOs.WordCloudDTO;
 import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
 import com.demokratica.backend.Exceptions.WordCloudNotFoundException;
@@ -44,7 +44,7 @@ public class WordCloudService {
     }
 
     @Transactional
-    public CreatedWordCloudDTO createWordCloud(Long sessionId, ActivityDTO dto) {
+    public WordCloudDTO createWordCloud(Long sessionId, ActivityCreationDTO dto) {
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
                 new SessionNotFoundException(sessionId));
 
@@ -67,20 +67,21 @@ public class WordCloudService {
         ArrayList<TagDTO> tagDTOs = saved.getTags().stream().map(tag -> {
             return new TagDTO(tag.getTagText());
         }).collect(Collectors.toCollection(ArrayList::new));
-        return new CreatedWordCloudDTO(saved.getId(), saved.getQuestion(), saved.getStartTime(), saved.getEndTime(), tagDTOs);
+        
+        return new WordCloudDTO(saved.getId(), saved.getQuestion(), false, saved.getStartTime(), saved.getEndTime(), saved.getCreationTime(), tagDTOs);
     }
 
     @Transactional
     public void postWord(Long wordCloudId, String word) {
-        WordCloud wordCloud = wordCloudRepository.findById(wordCloudId).orElseThrow(() ->
-            new WordCloudNotFoundException(wordCloudId));
-
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        User user = usersRepository.findById(userEmail).orElseThrow(() -> 
-            new UserNotFoundException(userEmail));
-
         Optional<UserWord> userWord = userWordRepository.findByWordCloudAndUser(wordCloudId, userEmail);
         if (!userWord.isPresent()) {
+            WordCloud wordCloud = wordCloudRepository.findById(wordCloudId).orElseThrow(() ->
+            new WordCloudNotFoundException(wordCloudId));
+
+            User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+                new UserNotFoundException(userEmail));
+
             UserWord newUserWord = new UserWord();
             newUserWord.setUser(user);
             newUserWord.setWordCloud(wordCloud);
@@ -91,4 +92,6 @@ public class WordCloudService {
             userWordRepository.save(userWord.get());
         }
     }
+
+
 }

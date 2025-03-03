@@ -34,6 +34,6 @@ public interface PollsRepository extends JpaRepository<Poll, Long> {
     Long getTotalInvitedUsers (@Param("sessionId") Long sessionId);
 
 
-    @Query("SELECT uv FROM UserVote uv WHERE uv.user.email = :userEmail AND uv.poll.session.id = :sessionId")
-    Optional<UserVote> findUserVoteByUserAndSession(@Param("userEmail") String userEmail, @Param("sessionId") Long sessionId);
+    @Query("SELECT uv FROM UserVote uv WHERE uv.user.email = :userEmail AND uv.poll.id = :pollId")
+    Optional<UserVote> findUserVoteByUserAndPoll(@Param("userEmail") String userEmail, @Param("pollId") Long pollId);
 }

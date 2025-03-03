@@ -2,8 +2,8 @@ package com.demokratica.backend.RestControllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.demokratica.backend.DTOs.ActivityDTO;
-import com.demokratica.backend.DTOs.CreatedWordCloudDTO;
+import com.demokratica.backend.DTOs.ActivityCreationDTO;
+import com.demokratica.backend.DTOs.WordCloudDTO;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Poll;
 import com.demokratica.backend.Model.PollOption;
@@ -59,9 +59,9 @@ public class ActivitiesController {
     }
 
     @PostMapping("/api/sessions/{id}/wordclouds")
-    public ResponseEntity<?> createWordCloud(@PathVariable Long id, @RequestBody ActivityDTO newWordCloudDTO) {
+    public ResponseEntity<?> createWordCloud(@PathVariable Long id, @RequestBody ActivityCreationDTO newWordCloudDTO) {
         accessController.checkIfCanCreateActivity(id);
-        CreatedWordCloudDTO response = wordCloudService.createWordCloud(id, newWordCloudDTO);
+        WordCloudDTO response = wordCloudService.createWordCloud(id, newWordCloudDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
