@@ -20,7 +20,7 @@ public class SavedActivityDTO extends ActivityCreationDTO {
     private Placeholder.EventStatus status;
     private Placeholder.ActivityType type;
     private boolean alreadyParticipated;
-    private ArrayList<Object> results;
+    protected ArrayList<Object> results;
 
     public SavedActivityDTO (Long id, String question, boolean alreadyParticipated, LocalDateTime startTime, LocalDateTime endTime, 
                             LocalDateTime creationTime, ArrayList<TagDTO> tags, Placeholder.ActivityType type) {

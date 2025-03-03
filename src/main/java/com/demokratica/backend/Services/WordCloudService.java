@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.DTOs.ActivityCreationDTO;
+import com.demokratica.backend.DTOs.SavedActivityDTO;
 import com.demokratica.backend.DTOs.WordCloudDTO;
 import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Exceptions.UserNotFoundException;
@@ -99,5 +100,37 @@ public class WordCloudService {
             new WordCloudNotFoundException(wordCloudId));
 
         wordCloudRepository.deleteById(wc.getId());
+    }
+
+    public ArrayList<SavedActivityDTO> getSessionWordClouds(Long sessionId) {
+        Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
+            new SessionNotFoundException(sessionId));
+
+        //Necesario para saber si el usuario ya participó en alguna de las nubes de palabras
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        ArrayList<SavedActivityDTO> wordClouds = session.getWordClouds().stream().map(wc -> {
+            Long id = wc.getId();
+            String question = wc.getQuestion();
+
+            LocalDateTime startTime = wc.getStartTime();
+            LocalDateTime endTime = wc.getEndTime();
+            LocalDateTime creationTime = wc.getCreationTime();
+            
+            ArrayList<TagDTO> tagDTOs = wc.getTags().stream().map(tag -> {
+                return new TagDTO(tag.getTagText());
+            }).collect(Collectors.toCollection(ArrayList::new));
+
+            boolean alreadyParticipated = false;
+            if (userWordRepository.findByWordCloudAndUser(id, userEmail).isPresent()) {
+                alreadyParticipated = true;
+            }
+
+            WordCloudDTO dto = new WordCloudDTO(id, question, alreadyParticipated, startTime, endTime, creationTime, tagDTOs);
+            dto.setResults(new ArrayList<>(userWordRepository.findWordsByWordCloud(id)));
+            
+            return dto;
+        }).collect(Collectors.toCollection(ArrayList::new));
+
+        return wordClouds;
     }
 }
