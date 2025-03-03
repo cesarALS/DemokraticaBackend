@@ -64,6 +64,14 @@ public class ActivitiesController {
         CreatedWordCloudDTO response = wordCloudService.createWordCloud(id, newWordCloudDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    @PostMapping("/api/wordclouds/{id}")
+    public ResponseEntity<?> postWord(@PathVariable Long id, @RequestBody String word) {
+        accessController.checkIfCanParticipateInWordCloud(id);
+        wordCloudService.postWord(id, word);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    
     
     
     @GetMapping("/api/sessions/{id}")

@@ -3,6 +3,7 @@ package com.demokratica.backend.Services;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -10,23 +11,39 @@ import org.springframework.stereotype.Service;
 import com.demokratica.backend.DTOs.ActivityDTO;
 import com.demokratica.backend.DTOs.CreatedWordCloudDTO;
 import com.demokratica.backend.Exceptions.SessionNotFoundException;
+import com.demokratica.backend.Exceptions.UserNotFoundException;
+import com.demokratica.backend.Exceptions.WordCloudNotFoundException;
 import com.demokratica.backend.Model.Session;
+import com.demokratica.backend.Model.User;
+import com.demokratica.backend.Model.UserWord;
 import com.demokratica.backend.Model.WordCloud;
 import com.demokratica.backend.Model.WordCloudTag;
 import com.demokratica.backend.Repositories.SessionsRepository;
+import com.demokratica.backend.Repositories.UserWordRepository;
+import com.demokratica.backend.Repositories.UsersRepository;
 import com.demokratica.backend.Repositories.WordCloudRepository;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
+import com.demokratica.backend.Security.SecurityConfig;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class WordCloudService {
     
     private WordCloudRepository wordCloudRepository;
     private SessionsRepository sessionsRepository;
-    public WordCloudService(WordCloudRepository wordCloudRepository, SessionsRepository sessionsRepository) {
+    private UsersRepository usersRepository;
+    private UserWordRepository userWordRepository;
+    public WordCloudService(WordCloudRepository wordCloudRepository, SessionsRepository sessionsRepository,
+                            UsersRepository usersRepository, UserWordRepository userWordRepository) {
+        
         this.wordCloudRepository = wordCloudRepository;
         this.sessionsRepository = sessionsRepository;
+        this.usersRepository = usersRepository;
+        this.userWordRepository = userWordRepository;
     }
 
+    @Transactional
     public CreatedWordCloudDTO createWordCloud(Long sessionId, ActivityDTO dto) {
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
                 new SessionNotFoundException(sessionId));
@@ -51,5 +68,27 @@ public class WordCloudService {
             return new TagDTO(tag.getTagText());
         }).collect(Collectors.toCollection(ArrayList::new));
         return new CreatedWordCloudDTO(saved.getId(), saved.getQuestion(), saved.getStartTime(), saved.getEndTime(), tagDTOs);
+    }
+
+    @Transactional
+    public void postWord(Long wordCloudId, String word) {
+        WordCloud wordCloud = wordCloudRepository.findById(wordCloudId).orElseThrow(() ->
+            new WordCloudNotFoundException(wordCloudId));
+
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
+        User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+            new UserNotFoundException(userEmail));
+
+        Optional<UserWord> userWord = userWordRepository.findByWordCloudAndUser(wordCloudId, userEmail);
+        if (!userWord.isPresent()) {
+            UserWord newUserWord = new UserWord();
+            newUserWord.setUser(user);
+            newUserWord.setWordCloud(wordCloud);
+            newUserWord.setWord(word);
+            userWordRepository.save(newUserWord);
+        } else {
+            userWord.get().setWord(word);
+            userWordRepository.save(userWord.get());
+        }
     }
 }

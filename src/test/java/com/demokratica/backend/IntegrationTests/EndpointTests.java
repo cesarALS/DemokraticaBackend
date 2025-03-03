@@ -79,7 +79,7 @@ public class EndpointTests {
 
     //Controladores
     @Autowired
-    SessionController sessionController;    //Espero que con esto baste para conectarse con el SessionService
+    SessionController sessionController;    
     @Autowired
     SignupController signupController;
     @Autowired
