@@ -127,7 +127,8 @@ public class WordCloudService {
             }
 
             WordCloudDTO dto = new WordCloudDTO(id, question, alreadyParticipated, startTime, endTime, creationTime, tagDTOs);
-            dto.setResults(new ArrayList<>(userWordRepository.findWordsByWordCloud(id)));
+            ArrayList<String> words = userWordRepository.findWordsByWordCloud(id);
+            dto.setResults(new ArrayList<>(words));
 
             return dto;
         }).collect(Collectors.toCollection(ArrayList::new));

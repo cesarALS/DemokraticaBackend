@@ -72,9 +72,9 @@ public class ActivitiesController {
     }
 
     @PostMapping("/api/wordclouds/{id}")
-    public ResponseEntity<?> postWord(@PathVariable Long id, @RequestBody String word) {
+    public ResponseEntity<?> postWord(@PathVariable Long id, @RequestBody WordDTO dto) {
         accessController.checkIfCanParticipateInWordCloud(id);
-        wordCloudService.postWord(id, word);
+        wordCloudService.postWord(id, dto.word());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
@@ -169,6 +169,9 @@ public class ActivitiesController {
             return response;
         }
         
+    }
+
+    public record WordDTO (String word) {
     }
 
     public record GetActivitiesDTO(Long sessionId, Invitation.Role userRole, ArrayList<CreatedObjectDTO> activities) {
