@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.PollTag;
-import com.demokratica.backend.Exceptions.InvitationNotFoundException;
 import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Placeholder;
@@ -17,7 +16,6 @@ import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Model.UserVote;
-import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.PollOptionsRepository;
 import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -25,6 +23,7 @@ import com.demokratica.backend.Repositories.UserVoteRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
 import com.demokratica.backend.RestControllers.ActivitiesController.NewPollDTO;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
+import com.demokratica.backend.Security.SecurityConfig;
 
 import jakarta.transaction.Transactional;
 
@@ -36,18 +35,16 @@ public class PollService {
     private UsersRepository usersRepository;
     private UserVoteRepository userVoteRepository;
     private PollOptionsRepository pollOptionsRepository;
-    private InvitationsRepository invitationsRepository;
 
     public PollService (SessionsRepository sessionsRepository, PollsRepository pollsRepository,
                         UsersRepository usersRepository, UserVoteRepository userVoteRepository,
-                        PollOptionsRepository pollOptionsRepository, InvitationsRepository invitationsRepository) {
+                        PollOptionsRepository pollOptionsRepository) {
         
         this.sessionsRepository = sessionsRepository;
         this.pollsRepository = pollsRepository;
         this.usersRepository = usersRepository;
         this.pollOptionsRepository = pollOptionsRepository;
         this.userVoteRepository = userVoteRepository;                 
-        this.invitationsRepository = invitationsRepository;
     }
 
     @Transactional
@@ -85,10 +82,8 @@ public class PollService {
     }
 
     @Transactional
-    public ArrayList<PollDTO> getSessionPolls (Long sessionId, String userEmail) {
-        //Para verificar que el usuario haya sido invitado y por lo tanto tenga permiso para leer esta información
-        invitationsRepository.findInvitationByUserAndSessionId(userEmail, sessionId)
-                .orElseThrow(() -> new InvitationNotFoundException(userEmail, sessionId));
+    public ArrayList<PollDTO> getSessionPolls (Long sessionId) {
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
 
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
             new SessionNotFoundException(sessionId));

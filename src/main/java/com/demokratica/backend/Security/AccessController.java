@@ -20,30 +20,37 @@ public class AccessController {
     @Autowired
     private WordCloudRepository wordCloudRepository;
 
-    public void checkifCanUpdateSession(Long sessionId) {
+
+    private Invitation.Role checkIfCanDoActionInSession(Long sessionId, Invitation.Role neededRole, RuntimeException ex) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        //Múltiples razones posibles para no permitirle actualizar una sesión: no tiene el rol necesario,
-        //directamente no ha sido invitado a la sesión o la sesión ni siquiera existe
         Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
-        if (!role.isPresent() || role.get() != Invitation.Role.DUEÑO) {
-            throw new AccessDeniedException(AccessDeniedException.Type.UPDATE_SESSION);
+        //Los roles están organizados en DUEÑO, ADMIN, EDITOR y PARTICIPANTE. Un rol numéricamente mayor al requerido 
+        //significa que no se tienen los permisos suficientes
+        if (!role.isPresent() || role.get().ordinal() > neededRole.ordinal()) {
+            throw ex;
         }
+
+        return role.get();
+    }
+    
+    public void checkifCanUpdateSession(Long sessionId) {
+        RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.UPDATE_SESSION);
+        checkIfCanDoActionInSession(sessionId, Invitation.Role.DUEÑO, ex);
     }
 
     public void checkIfCanCreateActivity(Long sessionId) {
-        String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
-        if (!role.isPresent() || role.get() != Invitation.Role.DUEÑO) {
-            throw new AccessDeniedException(AccessDeniedException.Type.CREATE_ACTIVITY);
-        }
+        RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.CREATE_ACTIVITY);
+        checkIfCanDoActionInSession(sessionId, Invitation.Role.DUEÑO, ex);
     }
 
-    public void checkIfCanParticipate(Long sessionId) {
-        String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        Optional<Invitation.Role> role = invitationsRepository.findRoleByUserAndSessionId(userEmail, sessionId);
-        if (!role.isPresent()) {
-            throw new AccessDeniedException(AccessDeniedException.Type.PARTICIPATE_IN_ACTIVITY);
-        }
+    public void checkIfCanDeleteActivities(Long sessionId) {
+        RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.DELETE_ACTIVITY);
+        checkIfCanDoActionInSession(sessionId, Invitation.Role.DUEÑO, ex);
+    }
+
+    public Invitation.Role checkIfCanParticipate(Long sessionId) {
+        RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.PARTICIPATE_IN_ACTIVITY);
+        return checkIfCanDoActionInSession(sessionId, Invitation.Role.PARTICIPANTE, ex);
     }
 
     public void checkIfCanParticipateInWordCloud(Long wordCloudId) {
@@ -53,5 +60,13 @@ public class AccessController {
         }
         Long sessionId = wc.get().getSession().getId();
         checkIfCanParticipate(sessionId);
+    }
+
+    public void checkIfCanDeleteWordClouds(Long wordCloudId) {
+        WordCloud wc = wordCloudRepository.findById(wordCloudId).orElseThrow(() -> 
+            new WordCloudNotFoundException(wordCloudId));
+
+        RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.DELETE_ACTIVITY);
+        checkIfCanDoActionInSession(wc.getSession().getId(), Invitation.Role.DUEÑO, ex);
     }
 }

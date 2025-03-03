@@ -93,5 +93,11 @@ public class WordCloudService {
         }
     }
 
+    @Transactional
+    public void deleteWordCloud(Long wordCloudId) {
+        WordCloud wc = wordCloudRepository.findById(wordCloudId).orElseThrow(() -> 
+            new WordCloudNotFoundException(wordCloudId));
 
+        wordCloudRepository.deleteById(wc.getId());
+    }
 }

@@ -12,7 +12,6 @@ import com.demokratica.backend.RestControllers.SessionController.TagDTO;
 import com.demokratica.backend.Security.AccessController;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Services.PollService;
-import com.demokratica.backend.Services.SessionService;
 import com.demokratica.backend.Services.WordCloudService;
 import com.demokratica.backend.Services.PollService.PollDTO;
 
@@ -39,12 +38,10 @@ public class ActivitiesController {
     
     private PollService pollService;
     private WordCloudService wordCloudService;
-    private SessionService sessionService;
     private AccessController accessController;
-    public ActivitiesController (PollService pollService, SessionService sessionService, 
-                                WordCloudService wordCloudService, AccessController accessController) {
+    public ActivitiesController (PollService pollService, WordCloudService wordCloudService, 
+                                AccessController accessController) {
         this.pollService = pollService;
-        this.sessionService = sessionService;
         this.wordCloudService = wordCloudService;
         this.accessController = accessController;
     }
@@ -72,13 +69,18 @@ public class ActivitiesController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
+    @DeleteMapping("/api/wordsclouds/{id}")
+    public ResponseEntity<?> deleteWordCloud(@PathVariable Long id) {
+        accessController.checkIfCanDeleteWordClouds(id);
+        wordCloudService.deleteWordCloud(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
     
     
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
-        String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id, userEmail));
-        Invitation.Role userRole = sessionService.getUserRoleFromEmail(userEmail, id);
+        Invitation.Role userRole = accessController.checkIfCanParticipate(id);
+        ArrayList<PollDTO> userPolls = new ArrayList<>(pollService.getSessionPolls(id));
         GetActivitiesDTO response = new GetActivitiesDTO(id, userRole, userPolls);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
