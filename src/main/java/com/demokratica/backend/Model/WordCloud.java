@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,28 +15,28 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "polls")
+@Table(name = "word_clouds")
 @Data
-public class Poll {
+public class WordCloud {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "poll_id")
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "session_id")
-    private Session session;
-
-    @Column(length = 500)
-    private String question;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private LocalDateTime creationTime;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<PollTag> tags;
+    private String question;
 
-    @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)
-    private List<PollOption> options;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WordCloudTag> tags;
+
+    @OneToMany(mappedBy = "wordCloud", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserWord> words;
+
+    @ManyToOne
+    @JoinColumn(name = "session_id")
+    private Session session;
+    
 }

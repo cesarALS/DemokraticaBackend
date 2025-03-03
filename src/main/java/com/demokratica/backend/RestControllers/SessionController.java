@@ -51,7 +51,7 @@ public class SessionController {
     @PutMapping("api/sessions/{id}")
     public ResponseEntity<?> updateSession(@PathVariable Long id, @RequestBody NewSessionDTO dto) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        accessController.checkifCanUpdateSession(userEmail, id);
+        accessController.checkifCanUpdateSession(id);
         Session updatedSession = sessionService.updateSession(id, userEmail, dto);
         NewSessionResponse response = new NewSessionResponse(updatedSession.getId(), dto);
         return new ResponseEntity<>(response, HttpStatus.OK);

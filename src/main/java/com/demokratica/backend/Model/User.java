@@ -37,5 +37,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<UserVote> votes;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserWord> words;
     
 }

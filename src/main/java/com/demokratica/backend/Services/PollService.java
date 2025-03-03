@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.demokratica.backend.Model.PollTag;
-import com.demokratica.backend.Exceptions.InvitationNotFoundException;
+import com.demokratica.backend.DTOs.SavedActivityDTO;
 import com.demokratica.backend.Exceptions.SessionNotFoundException;
 import com.demokratica.backend.Model.Invitation;
 import com.demokratica.backend.Model.Placeholder;
@@ -17,7 +17,6 @@ import com.demokratica.backend.Model.PollOption;
 import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Model.User;
 import com.demokratica.backend.Model.UserVote;
-import com.demokratica.backend.Repositories.InvitationsRepository;
 import com.demokratica.backend.Repositories.PollOptionsRepository;
 import com.demokratica.backend.Repositories.PollsRepository;
 import com.demokratica.backend.Repositories.SessionsRepository;
@@ -25,6 +24,7 @@ import com.demokratica.backend.Repositories.UserVoteRepository;
 import com.demokratica.backend.Repositories.UsersRepository;
 import com.demokratica.backend.RestControllers.ActivitiesController.NewPollDTO;
 import com.demokratica.backend.RestControllers.SessionController.TagDTO;
+import com.demokratica.backend.Security.SecurityConfig;
 
 import jakarta.transaction.Transactional;
 
@@ -36,18 +36,16 @@ public class PollService {
     private UsersRepository usersRepository;
     private UserVoteRepository userVoteRepository;
     private PollOptionsRepository pollOptionsRepository;
-    private InvitationsRepository invitationsRepository;
 
     public PollService (SessionsRepository sessionsRepository, PollsRepository pollsRepository,
                         UsersRepository usersRepository, UserVoteRepository userVoteRepository,
-                        PollOptionsRepository pollOptionsRepository, InvitationsRepository invitationsRepository) {
+                        PollOptionsRepository pollOptionsRepository) {
         
         this.sessionsRepository = sessionsRepository;
         this.pollsRepository = pollsRepository;
         this.usersRepository = usersRepository;
         this.pollOptionsRepository = pollOptionsRepository;
         this.userVoteRepository = userVoteRepository;                 
-        this.invitationsRepository = invitationsRepository;
     }
 
     @Transactional
@@ -59,8 +57,7 @@ public class PollService {
         Poll poll = new Poll();
         poll.setSession(session);
         
-        poll.setTitle(dto.title());
-        poll.setDescription(dto.description());
+        poll.setQuestion(dto.question());
         poll.setStartTime(dto.startTime());
         poll.setEndTime(dto.endTime());
         
@@ -86,18 +83,17 @@ public class PollService {
     }
 
     @Transactional
-    public ArrayList<PollDTO> getSessionPolls (Long sessionId, String userEmail) {
-        invitationsRepository.findInvitationByUserAndSessionId(userEmail, sessionId)
-                .orElseThrow(() -> new InvitationNotFoundException(userEmail, sessionId));
+    public ArrayList<SavedActivityDTO> getSessionPolls (Long sessionId) {
+        String userEmail = SecurityConfig.getUsernameFromAuthentication();
 
         Session session = sessionsRepository.findById(sessionId).orElseThrow(() -> 
             new SessionNotFoundException(sessionId));
 
-        ArrayList<PollDTO> polls = session.getPolls().stream().map(poll -> {
+        ArrayList<SavedActivityDTO> polls = session.getPolls().stream().map(poll -> {
             Long pollId = poll.getId();
-            String pollTitle = poll.getTitle();
-            String pollDescription = poll.getDescription();
+            String pollQuestion = poll.getQuestion();
             LocalDateTime startTime = poll.getStartTime();
+            LocalDateTime creationTime = poll.getCreationTime();
             LocalDateTime endTime = poll.getEndTime();
 
             ArrayList<TagDTO> tags = poll.getTags().stream().map(tag -> {
@@ -110,14 +106,14 @@ public class PollService {
             pollResults.add(new PollResultDTO(null, null, nonVoters));
             
             boolean alreadyParticipated = false;
-            if (pollsRepository.findUserVoteByUserAndSession(userEmail, sessionId).isPresent()) {
+            if (pollsRepository.findUserVoteByUserAndPoll(userEmail, pollId).isPresent()) {
                 alreadyParticipated = true;
             }
 
-            return new PollDTO(pollId, Placeholder.ActivityType.POLL, 
-                                Placeholder.getEventStatus(startTime, endTime), alreadyParticipated, 
-                                pollTitle, pollDescription, startTime, endTime, tags, pollResults);
-
+            SavedActivityDTO dto = new SavedActivityDTO(pollId, pollQuestion, alreadyParticipated, startTime, 
+                            endTime, creationTime, tags, Placeholder.ActivityType.POLL);
+            dto.setResults(new ArrayList<>(pollResults));
+            return dto;
         }).collect(Collectors.toCollection(ArrayList::new));
 
         return polls;
@@ -182,7 +178,7 @@ public class PollService {
     }
 
     public record PollDTO (Long id, Placeholder.ActivityType type, Placeholder.EventStatus activityStatus, 
-                            boolean alreadyParticipated, String title, String description, 
+                            boolean alreadyParticipated, String question,  
                             LocalDateTime startTime, LocalDateTime endTime, 
                             ArrayList<TagDTO> tags, ArrayList<PollResultDTO> pollResults) {
     }

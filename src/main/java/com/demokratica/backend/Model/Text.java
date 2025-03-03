@@ -16,28 +16,23 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "polls")
 @Data
-public class Poll {
+@Table(name = "sessions_texts")
+public class Text {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "poll_id")
     private Long id;
+
+    private LocalDateTime creationTime;
+
+    @Column(length = 1000)
+    private String content;
 
     @ManyToOne
     @JoinColumn(name = "session_id")
     private Session session;
 
-    @Column(length = 500)
-    private String question;
-
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-    private LocalDateTime creationTime;
-
     @OneToMany(cascade = CascadeType.ALL)
-    private List<PollTag> tags;
-
-    @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)
-    private List<PollOption> options;
+    private List<TextTag> tags;
 }
