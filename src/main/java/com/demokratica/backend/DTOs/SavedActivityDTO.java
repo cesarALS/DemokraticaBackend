@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class SavedActivityDTO extends ActivityCreationDTO {
+public class SavedActivityDTO extends ActivityCreationDTO implements CreatedObjectDTO {
     
     private Long id;
     private LocalDateTime creationTime;

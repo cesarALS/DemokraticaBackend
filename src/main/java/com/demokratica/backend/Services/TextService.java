@@ -49,7 +49,7 @@ public class TextService {
             return new TagDTO(textTag.getTagText());
         }).collect(Collectors.toCollection(ArrayList::new));
 
-        return new SavedTextDTO(saved.getId(), saved.getContent(), tags);
+        return new SavedTextDTO(saved.getId(), saved.getContent(), tags, saved.getCreationTime());
     }
 
     public void deleteText(Long textId) {
@@ -58,5 +58,24 @@ public class TextService {
             new TextNotFoundException(textId));
 
         textRepository.deleteById(text.getId());
+    }
+
+    public ArrayList<SavedTextDTO> getSessionTexts(Long sessionId) {
+        Session session = sessionsRepository.findById(sessionId).orElseThrow(() ->
+            new SessionNotFoundException(sessionId));
+
+        ArrayList<SavedTextDTO> savedTexts = session.getTexts().stream().map(text -> {
+            Long textId = text.getId();
+            String content = text.getContent();
+            LocalDateTime creationTime = text.getCreationTime();
+
+            ArrayList<TagDTO> tagDTOs = text.getTags().stream().map(tag -> {
+                return new TagDTO(tag.getTagText());
+            }).collect(Collectors.toCollection(ArrayList::new));
+            
+            return new SavedTextDTO(textId, content, tagDTOs, creationTime);
+        }).collect(Collectors.toCollection(ArrayList::new));
+
+        return savedTexts;
     }
 }

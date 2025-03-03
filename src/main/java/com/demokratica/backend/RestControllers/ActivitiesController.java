@@ -3,7 +3,7 @@ package com.demokratica.backend.RestControllers;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demokratica.backend.DTOs.ActivityCreationDTO;
-import com.demokratica.backend.DTOs.SavedActivityDTO;
+import com.demokratica.backend.DTOs.CreatedObjectDTO;
 import com.demokratica.backend.DTOs.SavedTextDTO;
 import com.demokratica.backend.DTOs.TextCreationDTO;
 import com.demokratica.backend.DTOs.WordCloudDTO;
@@ -102,7 +102,7 @@ public class ActivitiesController {
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         Invitation.Role userRole = accessController.checkIfCanParticipate(id);
-        ArrayList<SavedActivityDTO> activities = activitiesService.getSessionActivities(id);
+        ArrayList<CreatedObjectDTO> activities = activitiesService.getSessionActivities(id);
         GetActivitiesDTO response = new GetActivitiesDTO(id, userRole, activities);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -171,7 +171,7 @@ public class ActivitiesController {
         
     }
 
-    public record GetActivitiesDTO(Long sessionId, Invitation.Role userRole, ArrayList<SavedActivityDTO> activities) {
+    public record GetActivitiesDTO(Long sessionId, Invitation.Role userRole, ArrayList<CreatedObjectDTO> activities) {
     }
     
 }
