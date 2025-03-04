@@ -87,7 +87,7 @@ public class ActivitiesController {
 
     @PostMapping("/api/sessions/{id}/texts")
     public ResponseEntity<?> createText(@PathVariable Long id, @RequestBody TextCreationDTO TextCreationDTO) {
-        accessController.checkIfCanCreateActivity(id);
+        accessController.checkIfCanCreateTexts(id);
         SavedTextDTO response = textService.createText(id, TextCreationDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -99,7 +99,7 @@ public class ActivitiesController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
-    @GetMapping("/api/sessions/{id}")
+    @GetMapping("/api/sessions/{id}/activities")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         Invitation.Role userRole = accessController.checkIfCanParticipate(id);
         ArrayList<CreatedObjectDTO> activities = activitiesService.getSessionActivities(id);

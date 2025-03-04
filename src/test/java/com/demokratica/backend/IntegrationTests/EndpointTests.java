@@ -57,7 +57,7 @@ import com.demokratica.backend.Security.JwtAuthentication;
 import com.demokratica.backend.RestControllers.AccountController;
 import com.demokratica.backend.RestControllers.LoginController;
 import com.demokratica.backend.Services.JWTService;
-import com.demokratica.backend.Services.SessionService.GetSessionsDTO;
+import com.demokratica.backend.Services.SessionService.GetBriefSessionsDTO;
 
 import jakarta.transaction.Transactional;
 /*
@@ -455,12 +455,12 @@ public class EndpointTests {
     public void getAllUserSessions() {
         for (int i = 1; i <=3; i++) {
             String jwtToken = login(getUserEmail(i));
-            ArrayList<GetSessionsDTO> response = new ArrayList<>(webTestClient.get()
+            ArrayList<GetBriefSessionsDTO> response = new ArrayList<>(webTestClient.get()
                             .uri("/api/sessions")
                             .header("Authorization", "Bearer " + jwtToken)
                             .exchange()
                             .expectStatus().isOk()
-                            .expectBodyList(GetSessionsDTO.class)
+                            .expectBodyList(GetBriefSessionsDTO.class)
                             .returnResult().getResponseBody());
 
             Assertions.assertThat(response.size()).isEqualTo(2);

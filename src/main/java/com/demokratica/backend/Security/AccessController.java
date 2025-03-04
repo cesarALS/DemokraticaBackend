@@ -82,4 +82,9 @@ public class AccessController {
         RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.DELETE_ACTIVITY);
         checkIfCanDoActionInSession(text.getSession().getId(), Invitation.Role.DUEÑO, ex);
     }
+
+    public void checkIfCanCreateTexts(Long sessionId) {
+        RuntimeException ex = new AccessDeniedException(AccessDeniedException.Type.CREATE_TEXT);
+        checkIfCanDoActionInSession(sessionId, Invitation.Role.EDITOR, ex);
+    }
 }

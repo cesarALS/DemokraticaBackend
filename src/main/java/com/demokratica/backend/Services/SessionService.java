@@ -1,5 +1,6 @@
 package com.demokratica.backend.Services;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,11 +95,14 @@ public class SessionService {
             return sessionsRepository.save(session);
     }
     
-    public ArrayList<GetSessionsDTO> getSessionsOfUser(String userEmail) {
-        User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
+    public ArrayList<GetBriefSessionsDTO> getSessionsOfUser(String userEmail) {
+        User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+            new UserNotFoundException(userEmail));
+        
         ArrayList<Invitation> invitations = new ArrayList<>(user.getInvitations());
-        ArrayList<GetSessionsDTO> sessions = invitations.stream().map(invitation -> {
+        ArrayList<GetBriefSessionsDTO> sessions = invitations.stream().map(invitation -> {
             Session session = invitation.getSession();
+
             String title = session.getTitle();
             String description = session.getDescription();
             int noParticipants = session.getInvitations().size();
@@ -112,10 +116,34 @@ public class SessionService {
             String creationDate = session.getStartTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             Long sessionId = session.getId();
 
-            return new GetSessionsDTO(sessionId, title, description, creationDate, noParticipants, noActivities, isHost, tags);
+            return new GetBriefSessionsDTO(sessionId, title, description, creationDate, noParticipants, noActivities, isHost, tags);
         }).collect(Collectors.toCollection(ArrayList::new));
 
         return sessions;
+    }
+
+    public GetDetailedSessionDTO getSessionDetails(Long sessionId) {
+        Session session = sessionsRepository.findById(sessionId).orElseThrow(() ->
+            new SessionNotFoundException(sessionId));
+
+        String title = session.getTitle();
+        String description = session.getDescription();
+        LocalDateTime startTime = session.getStartTime();
+        LocalDateTime endTime = session.getEndTime();
+
+        ArrayList<ParticipantDTO> participants = session.getInvitations().stream().map(invitation -> {
+            String email = invitation.getInvitedUser().getEmail();
+            String username = invitation.getInvitedUser().getUsername();
+            Invitation.Role role = invitation.getRole();
+
+            return new ParticipantDTO(email, username, role);
+        }).collect(Collectors.toCollection(ArrayList::new));
+
+        ArrayList<TagDTO> tagsDTOs = session.getTags().stream().map(tag -> {
+            return new TagDTO(tag.getTagText());
+        }).collect(Collectors.toCollection(ArrayList::new));
+
+        return new GetDetailedSessionDTO(title, description, startTime, endTime, tagsDTOs, participants);
     }
 
     public void deleteById(String userEmail, Long sessionId) {
@@ -178,6 +206,14 @@ public class SessionService {
         return userRole;
     }
 
-    public record GetSessionsDTO (Long id, String title, String description, String creationDate, int noParticipants, int noActivities, boolean isHost, ArrayList<TagDTO> tags) {
+    public record GetBriefSessionsDTO (Long id, String title, String description, String creationDate, int noParticipants, 
+                                    int noActivities, boolean isHost, ArrayList<TagDTO> tags) {
+    }
+
+    public record GetDetailedSessionDTO (String title, String description, LocalDateTime startTime, LocalDateTime endTime,
+                                        ArrayList<TagDTO> tags, ArrayList<ParticipantDTO> participants) {
+    }
+
+    public record ParticipantDTO (String email, String username, Invitation.Role role) {
     }
 }
