@@ -95,10 +95,23 @@ public class SessionService {
     }
     
     public ArrayList<GetSessionsDTO> getSessionsOfUser(String userEmail) {
-        User user = usersRepository.findById(userEmail).orElseThrow(() -> new RuntimeException("Couldn't find user with email " + userEmail));
+        User user = usersRepository.findById(userEmail).orElseThrow(() -> 
+            new UserNotFoundException(userEmail));
+        
         ArrayList<Invitation> invitations = new ArrayList<>(user.getInvitations());
         ArrayList<GetSessionsDTO> sessions = invitations.stream().map(invitation -> {
             Session session = invitation.getSession();
+
+            ArrayList<ParticipantDTO> sessionParticipants = new ArrayList<>();
+            ArrayList<Invitation> sessionInvitations = new ArrayList<>(session.getInvitations());
+            sessionInvitations.stream().forEach(sessionInvitation -> {
+                String invitedEmail = sessionInvitation.getInvitedUser().getEmail();
+                String invitedUsername = sessionInvitation.getInvitedUser().getUsername();
+                Invitation.Role role = sessionInvitation.getRole();
+                ParticipantDTO participant = new ParticipantDTO(invitedEmail, invitedUsername, role);
+                sessionParticipants.add(participant);
+            });
+
             String title = session.getTitle();
             String description = session.getDescription();
             int noParticipants = session.getInvitations().size();
@@ -112,7 +125,7 @@ public class SessionService {
             String creationDate = session.getStartTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             Long sessionId = session.getId();
 
-            return new GetSessionsDTO(sessionId, title, description, creationDate, noParticipants, noActivities, isHost, tags);
+            return new GetSessionsDTO(sessionId, title, description, creationDate, noParticipants, noActivities, isHost, tags, sessionParticipants);
         }).collect(Collectors.toCollection(ArrayList::new));
 
         return sessions;
@@ -178,6 +191,10 @@ public class SessionService {
         return userRole;
     }
 
-    public record GetSessionsDTO (Long id, String title, String description, String creationDate, int noParticipants, int noActivities, boolean isHost, ArrayList<TagDTO> tags) {
+    public record GetSessionsDTO (Long id, String title, String description, String creationDate, int noParticipants, 
+                                    int noActivities, boolean isHost, ArrayList<TagDTO> tags, ArrayList<ParticipantDTO> participants) {
+    }
+
+    public record ParticipantDTO (String email, String username, Invitation.Role role) {
     }
 }
