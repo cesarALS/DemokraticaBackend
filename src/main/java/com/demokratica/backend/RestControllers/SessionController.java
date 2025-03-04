@@ -7,7 +7,8 @@ import com.demokratica.backend.Model.Session;
 import com.demokratica.backend.Security.SecurityConfig;
 import com.demokratica.backend.Security.AccessController;
 import com.demokratica.backend.Services.SessionService;
-import com.demokratica.backend.Services.SessionService.GetSessionsDTO;
+import com.demokratica.backend.Services.SessionService.GetBriefSessionsDTO;
+import com.demokratica.backend.Services.SessionService.GetDetailedSessionDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 
-
 @RestController
 public class SessionController {
     
@@ -36,9 +36,19 @@ public class SessionController {
     @GetMapping("/api/sessions")
     public ResponseEntity<?> returnAllUserSessions() {        
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
-        ArrayList<GetSessionsDTO> getSessionsResponse = sessionService.getSessionsOfUser(userEmail);
+        ArrayList<GetBriefSessionsDTO> getSessionsResponse = sessionService.getSessionsOfUser(userEmail);
         return new ResponseEntity<>(getSessionsResponse, HttpStatus.OK);
     }
+
+    @GetMapping("/api/sessions/{id}")
+    public ResponseEntity<?> getDetailsFromSession(@PathVariable Long id) {
+        //Este endpoint solo se llama cuando el usuario quiere reconfigurar una sesión
+        //y por lo tanto requiere los mismos permisos que para actualizar una sesión
+        accessController.checkifCanUpdateSession(id);
+        GetDetailedSessionDTO response = sessionService.getSessionDetails(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    
 
     @PostMapping("/api/sessions")
     public ResponseEntity<?> createNewSession(@RequestBody NewSessionDTO newSessionDTO) {

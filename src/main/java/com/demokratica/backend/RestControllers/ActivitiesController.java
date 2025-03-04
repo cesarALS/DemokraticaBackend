@@ -99,7 +99,7 @@ public class ActivitiesController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
-    @GetMapping("/api/sessions/{id}")
+    @GetMapping("/api/sessions/{id}/activities")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         Invitation.Role userRole = accessController.checkIfCanParticipate(id);
         ArrayList<CreatedObjectDTO> activities = activitiesService.getSessionActivities(id);
