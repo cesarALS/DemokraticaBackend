@@ -72,8 +72,10 @@ public class SessionController {
 
     public record NewSessionResponse (Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, int numParticipants, List<String> tags) {
         public NewSessionResponse(Long id, NewSessionDTO newSessionDTO) {
+            //Al número de invitaciones le sumamos 1 para tener en cuenta al dueño, que es un participante
+            //pero nunca está incluido en las listas de invitaciones
             this(id, newSessionDTO.title(), newSessionDTO.description(), newSessionDTO.startTime(), newSessionDTO.endTime(), 
-                newSessionDTO.invitations().size(), getFormattedTags(newSessionDTO.tags()));
+                newSessionDTO.invitations().size() + 1, getFormattedTags(newSessionDTO.tags()));
         }
 
         private static List<String> getFormattedTags(List<TagDTO> dto) {

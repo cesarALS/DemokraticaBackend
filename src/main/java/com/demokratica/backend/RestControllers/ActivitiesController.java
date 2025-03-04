@@ -87,7 +87,7 @@ public class ActivitiesController {
 
     @PostMapping("/api/sessions/{id}/texts")
     public ResponseEntity<?> createText(@PathVariable Long id, @RequestBody TextCreationDTO TextCreationDTO) {
-        accessController.checkIfCanCreateActivity(id);
+        accessController.checkIfCanCreateTexts(id);
         SavedTextDTO response = textService.createText(id, TextCreationDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
