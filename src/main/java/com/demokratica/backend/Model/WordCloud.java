@@ -3,6 +3,9 @@ package com.demokratica.backend.Model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,6 +18,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Audited
 @Table(name = "word_clouds")
 @Data
 public class WordCloud {
@@ -29,9 +33,11 @@ public class WordCloud {
 
     private String question;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @NotAudited
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)    
     private List<WordCloudTag> tags;
 
+    @NotAudited
     @OneToMany(mappedBy = "wordCloud", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserWord> words;
 
