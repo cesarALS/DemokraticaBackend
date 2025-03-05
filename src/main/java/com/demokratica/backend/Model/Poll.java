@@ -3,6 +3,9 @@ package com.demokratica.backend.Model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +19,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Audited
 @Table(name = "polls")
 @Data
 public class Poll {
@@ -35,9 +39,11 @@ public class Poll {
     private LocalDateTime endTime;
     private LocalDateTime creationTime;
 
+    @NotAudited
     @OneToMany(cascade = CascadeType.ALL)
     private List<PollTag> tags;
-
+    
+    @NotAudited
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)
     private List<PollOption> options;
 }
