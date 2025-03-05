@@ -7,7 +7,7 @@ import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,11 +18,11 @@ import java.util.Map;
 
 @Service
 public class MercadoPagoService {    
-
+    @Value("${MP_ACCESS_TOKEN}")
+    private String mpAccessToken;
     public String crearPreferenciaDePago(String planId, String email) throws MPException, MPApiException {
-        System.out.println(planId);
-        
-        MercadoPagoConfig.setAccessToken("APP_USR-2595305637078013-020521-aeef252ee0e80a9800678340dce7dc81-2253827844");        
+        System.out.println(planId);        
+        MercadoPagoConfig.setAccessToken(mpAccessToken);        
         
          // Definir precios según el plan
         Map<String, BigDecimal> precios = new HashMap<>();
