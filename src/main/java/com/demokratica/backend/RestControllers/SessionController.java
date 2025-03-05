@@ -42,9 +42,7 @@ public class SessionController {
 
     @GetMapping("/api/sessions/{id}")
     public ResponseEntity<?> getDetailsFromSession(@PathVariable Long id) {
-        //Este endpoint solo se llama cuando el usuario quiere reconfigurar una sesión
-        //y por lo tanto requiere los mismos permisos que para actualizar una sesión
-        accessController.checkifCanUpdateSession(id);
+        accessController.checkIfCanParticipate(id);
         GetDetailedSessionDTO response = sessionService.getSessionDetails(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
