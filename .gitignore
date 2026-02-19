@@ -34,3 +34,5 @@ build/
 
 #Variables de entorno
 /env.ps1
+/.env
+/.envrc
