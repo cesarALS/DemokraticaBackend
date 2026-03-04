@@ -37,6 +37,7 @@ public class SecurityConfig {
 		 */
 			.csrf(csrf -> csrf.disable()) 
 			.authorizeHttpRequests((authorize) -> authorize
+				.requestMatchers("/actuator/**").permitAll()
 				.requestMatchers(HttpMethod.DELETE, "/api/sessions/").permitAll()
 				.requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
 				.requestMatchers("/api/webhooks/mercadopago").permitAll() // La validación con x-request se hará manualmente
