@@ -11,7 +11,7 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/payments")
 public class MercadoPagoController {
 
     private final MercadoPagoService mercadoPagoService;

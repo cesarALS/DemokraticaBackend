@@ -55,7 +55,7 @@ public class ActivitiesController {
         this.accessController = accessController;
     }
 
-    @PostMapping("/api/sessions/{id}/polls")
+    @PostMapping("/sessions/{id}/polls")
     public ResponseEntity<?> createPoll(@PathVariable Long id, @RequestBody NewPollDTO newPollDTO) {
         accessController.checkIfCanCreateActivity(id);
         
@@ -64,42 +64,42 @@ public class ActivitiesController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/api/sessions/{id}/wordclouds")
+    @PostMapping("/sessions/{id}/wordclouds")
     public ResponseEntity<?> createWordCloud(@PathVariable Long id, @RequestBody ActivityCreationDTO newWordCloudDTO) {
         accessController.checkIfCanCreateActivity(id);
         WordCloudDTO response = wordCloudService.createWordCloud(id, newWordCloudDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/api/wordclouds/{id}")
+    @PostMapping("/wordclouds/{id}")
     public ResponseEntity<?> postWord(@PathVariable Long id, @RequestBody WordDTO dto) {
         accessController.checkIfCanParticipateInWordCloud(id);
         wordCloudService.postWord(id, dto.word());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
-    @DeleteMapping("/api/wordclouds/{id}")
+    @DeleteMapping("/wordclouds/{id}")
     public ResponseEntity<?> deleteWordCloud(@PathVariable Long id) {
         accessController.checkIfCanDeleteWordClouds(id);
         wordCloudService.deleteWordCloud(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PostMapping("/api/sessions/{id}/texts")
+    @PostMapping("/sessions/{id}/texts")
     public ResponseEntity<?> createText(@PathVariable Long id, @RequestBody TextCreationDTO TextCreationDTO) {
         accessController.checkIfCanCreateTexts(id);
         SavedTextDTO response = textService.createText(id, TextCreationDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     
-    @DeleteMapping("/api/texts/{id}")
+    @DeleteMapping("/texts/{id}")
     public ResponseEntity<?> deleteText(@PathVariable Long id) {
         accessController.checkIfCanDeleteTexts(id);
         textService.deleteText(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
-    @GetMapping("/api/sessions/{id}/activities")
+    @GetMapping("/sessions/{id}/activities")
     public ResponseEntity<?> getActivities(@PathVariable Long id) {
         Invitation.Role userRole = accessController.checkIfCanParticipate(id);
         ArrayList<CreatedObjectDTO> activities = activitiesService.getSessionActivities(id);
@@ -108,7 +108,7 @@ public class ActivitiesController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PostMapping("/api/polls/{poll_id}")
+    @PostMapping("/polls/{poll_id}")
     public ResponseEntity<?> voteForAnOption(@PathVariable Long poll_id, @RequestBody VoteDTO vote) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
         Long optionId = vote.optionId();
@@ -117,7 +117,7 @@ public class ActivitiesController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @DeleteMapping("/api/polls/{poll_id}")
+    @DeleteMapping("/polls/{poll_id}")
     public ResponseEntity<?> deletePoll (@PathVariable Long poll_id) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
         pollService.deletePoll(userEmail, poll_id);

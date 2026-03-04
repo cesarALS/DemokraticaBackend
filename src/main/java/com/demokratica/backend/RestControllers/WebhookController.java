@@ -21,7 +21,7 @@ import com.demokratica.backend.Services.MercadoPagoService;
 import com.demokratica.backend.Services.MercadoPagoService.MercadoPagoWebhookResponseDTO;
 
 @RestController
-@RequestMapping("/api/webhooks")
+@RequestMapping("/webhooks")
 @CrossOrigin(origins = "*") // Toca deshabilitarlo completamente
 public class WebhookController {
     

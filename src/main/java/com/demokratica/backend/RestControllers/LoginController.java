@@ -25,7 +25,7 @@ public class LoginController {
         this.jwtService = jwtService;
     }
     
-    @PostMapping("/api/auth/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<?> loginWithPassword(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.email();
         String password = loginRequest.password();

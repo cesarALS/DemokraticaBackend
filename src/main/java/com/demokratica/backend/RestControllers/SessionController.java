@@ -33,14 +33,14 @@ public class SessionController {
         this.accessController = accessController;
     }
 
-    @GetMapping("/api/sessions")
+    @GetMapping("/sessions")
     public ResponseEntity<?> returnAllUserSessions() {        
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
         ArrayList<GetBriefSessionsDTO> getSessionsResponse = sessionService.getSessionsOfUser(userEmail);
         return new ResponseEntity<>(getSessionsResponse, HttpStatus.OK);
     }
 
-    @GetMapping("/api/sessions/{id}")
+    @GetMapping("/sessions/{id}")
     public ResponseEntity<?> getDetailsFromSession(@PathVariable Long id) {
         accessController.checkIfCanParticipate(id);
         GetDetailedSessionDTO response = sessionService.getSessionDetails(id);
@@ -48,7 +48,7 @@ public class SessionController {
     }
     
 
-    @PostMapping("/api/sessions")
+    @PostMapping("/sessions")
     public ResponseEntity<?> createNewSession(@RequestBody NewSessionDTO newSessionDTO) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
         Session createdSession = sessionService.createSession(userEmail, newSessionDTO);
@@ -68,7 +68,7 @@ public class SessionController {
     //Retornar 204 (No Content) si se borró exitosamente, 403 (Forbidden) en caso de que no tenga autorización o el recurso no exista
     //No se envía un 404 (Not Found) porque esa  información podría ser usada por un atacante para averiguar las IDs de los recursos
     //existentes
-    @DeleteMapping("/api/sessions/{id}")
+    @DeleteMapping("/sessions/{id}")
     public ResponseEntity<?> deleteSession(@PathVariable Long id) {
         String userEmail = SecurityConfig.getUsernameFromAuthentication();
         sessionService.deleteById(userEmail, id);
