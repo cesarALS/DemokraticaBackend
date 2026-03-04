@@ -33,7 +33,7 @@ public class AccountController {
         this.jwtService = jwtService;
     }
 
-    @PutMapping("/api/users/{email}/password")
+    @PutMapping("/users/{email}/password")
     public ResponseEntity<?> updatePassword(@PathVariable String email, @RequestBody PasswordChange passwordChange) {
         /*
          * Estoy asumiendo que en el formulario para actualizar la contraseña pide la contraseña actual por razones
@@ -57,7 +57,7 @@ public class AccountController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @DeleteMapping("/api/users/{email}")
+    @DeleteMapping("/users/{email}")
     public ResponseEntity<?> deleteAccount (@PathVariable String email, @RequestBody PasswordRequest request) {
         try {
             userService.authenticateUser(email, request.password());
@@ -71,7 +71,7 @@ public class AccountController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping("/api/users/{email}/username")
+    @PutMapping("/users/{email}/username")
     public ResponseEntity<?> updateUsername(@PathVariable String email, @RequestBody UsernameChange usernameChange) {
         try {
             userService.updateUsername(email, usernameChange.newUsername());
@@ -97,7 +97,7 @@ public class AccountController {
 
     //Este endpoint se usa para buscar participantes al crear sesiones. Múltiples páginas como Instagram y
     //Facebook permiten buscar cuáles son sus usuarios activos cuando uno realiza una búsqueda
-    @GetMapping("/api/users")
+    @GetMapping("/users")
     public ResponseEntity<?> returnAllUsers() {
         List<UserDTO> userDTOs = userService.getAllUsers();
         return new ResponseEntity<>(userDTOs, HttpStatus.OK);

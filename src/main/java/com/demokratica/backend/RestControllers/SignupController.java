@@ -36,7 +36,7 @@ public class SignupController {
     }
 
     //TODO: cambiar el nombre del endpoint por uno más RESTful
-    @PostMapping("/api/auth/signup")
+    @PostMapping("/auth/signup")
     public ResponseEntity<?> signUp(@RequestBody SignupData signupData) {
         try {
             userService.saveUser(signupData.email(), signupData.username(), signupData.password());
